@@ -3,12 +3,12 @@
 Ton premier plugin VST3 (effet de gain / volume), développé avec [JUCE](https://juce.com) 8.0.15.
 Licence : GPL v3 (voir `LICENSE`). Le SDK VST3 de Steinberg est sous licence MIT depuis la v3.8.0.
 
-![Aperçu du plugin MonPremierVST v0.2.0](https://raw.githubusercontent.com/pixalain/TEST-MistralCode/releases/assets/monpremiervst-mockup-v0.2.0.jpg)
+![Aperçu du plugin MonPremierVST v0.3.0](https://raw.githubusercontent.com/pixalain/TEST-MistralCode/releases/assets/monpremiervst-mockup-v0.3.0.jpg)
 
 ## Télécharger et installer (Windows 64 bits)
 
 1. Va dans l'onglet **[Releases](https://github.com/pixalain/TEST-MistralCode/releases)** de ce dépôt.
-2. Télécharge **`MonPremierVST-Setup-v0.2.0.exe`** (installeur automatique) ou **`MonPremierVST-Windows-v0.2.0.zip`** (le dossier `.vst3` à copier à la main dans `C:\Program Files\Common Files\VST3`).
+2. Télécharge **`MonPremierVST-Setup-v0.3.0.exe`** (installeur automatique) ou **`MonPremierVST-Windows-v0.3.0.zip`** (le dossier `.vst3` à copier à la main dans `C:\Program Files\Common Files\VST3`).
 3. Lance l'installeur (ou copie le `.vst3`), puis ouvre ta DAW (REAPER, Ableton, FL Studio, etc.) : le plugin apparaît sous le nom **MonPremierVST** dans la liste des effets VST3.
 
 ## Utiliser
