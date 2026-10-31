@@ -67,17 +67,22 @@ data class SessionInfo(
         }
 }
 
-fun raceSessions(race: Race): List<SessionInfo> = listOfNotNull(
-    race.firstPractice?.let { SessionInfo("fp1", R.string.session_fp1, it) },
-    race.secondPractice?.let { SessionInfo("fp2", R.string.session_fp2, it) },
-    race.thirdPractice?.let { SessionInfo("fp3", R.string.session_fp3, it) },
-    (race.sprintQualifying ?: race.sprintShootout)?.let {
-        SessionInfo("sq", R.string.session_sprint_qualifying, it)
-    },
-    race.Sprint?.let { SessionInfo("sprint", R.string.session_sprint, it) },
-    race.Qualifying?.let { SessionInfo("quali", R.string.session_qualifying, it) },
-    SessionInfo("race", R.string.session_race, Session(race.date, race.time), isRace = true)
-)
+fun raceSessions(race: Race): List<SessionInfo> {
+    val hasSprint = race.Sprint != null
+    return listOfNotNull(
+        race.firstPractice?.let { SessionInfo("fp1", R.string.session_fp1, it) },
+        race.secondPractice?.let { SessionInfo("fp2", R.string.session_fp2, it) },
+        race.thirdPractice?.let { SessionInfo("fp3", R.string.session_fp3, it) },
+        if (hasSprint) {
+            (race.sprintQualifying ?: race.sprintShootout)?.let {
+                SessionInfo("sq", R.string.session_sprint_qualifying, it)
+            }
+        } else null,
+        race.Sprint?.let { SessionInfo("sprint", R.string.session_sprint, it) },
+        race.Qualifying?.let { SessionInfo("quali", R.string.session_qualifying, it) },
+        SessionInfo("race", R.string.session_race, Session(race.date, race.time), isRace = true)
+    )
+}
 
 fun sessionDateTime(s: Session?): LocalDateTime? = try {
     if (s == null) null

@@ -6,6 +6,7 @@ import com.f1live.app.data.model.ConstructorStanding
 import com.f1live.app.data.model.DriverStanding
 import com.f1live.app.data.model.Race
 import com.f1live.app.data.model.Result
+import com.f1live.app.data.repository.DriverProfile
 import com.f1live.app.data.repository.F1Repository
 import com.f1live.app.data.repository.RaceDetail
 import kotlinx.coroutines.async
@@ -44,6 +45,9 @@ class F1ViewModel(
 
     private val _raceDetail = MutableStateFlow<UiState<RaceDetail>>(UiState.Loading)
     val raceDetail: StateFlow<UiState<RaceDetail>> = _raceDetail.asStateFlow()
+
+    private val _driverProfile = MutableStateFlow<UiState<DriverProfile>>(UiState.Loading)
+    val driverProfile: StateFlow<UiState<DriverProfile>> = _driverProfile.asStateFlow()
 
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated.asStateFlow()
@@ -85,6 +89,18 @@ class F1ViewModel(
                 _lastUpdated.value = System.currentTimeMillis()
             } catch (e: Exception) {
                 _races.value = UiState.Error(e.message ?: "Erreur inconnue")
+            }
+        }
+    }
+
+    fun loadDriver(driverId: String, currentTeam: String? = null) {
+        _driverProfile.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                _driverProfile.value = UiState.Success(repository.driverProfile(driverId, currentTeam))
+                _lastUpdated.value = System.currentTimeMillis()
+            } catch (e: Exception) {
+                _driverProfile.value = UiState.Error(e.message ?: "Erreur inconnue")
             }
         }
     }

@@ -37,4 +37,18 @@
     <string name="session_upcoming">À venir</string>
     <string name="view_results">Voir les résultats</string>
     <string name="all_sessions_done">Toutes les séances de ce week-end sont terminées.</string>
+    <string name="driver_profile_title">Fiche pilote</string>
+    <string name="years_old">%1$d ans</string>
+    <string name="born_on">Né le %1$s</string>
+    <string name="palmares">Palmarès en F1</string>
+    <string name="stat_wins">Victoires</string>
+    <string name="stat_poles">Poles</string>
+    <string name="stat_podiums">Podiums</string>
+    <string name="stat_fastest_laps">Tours rapides</string>
+    <string name="stat_races">Grands Prix</string>
+    <string name="stat_points">Points</string>
+    <string name="stat_seasons">Saisons</string>
+    <string name="stat_best_championship">Meilleur championnat</string>
+    <string name="stat_world_titles">Titres mondiaux</string>
+    <string name="recent_results">Derniers résultats</string>
 </resources>

@@ -7,6 +7,7 @@ import com.f1live.app.data.model.AlphaRound
 import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
+import com.f1live.app.data.model.DriversData
 import com.f1live.app.data.model.Envelope
 import com.f1live.app.data.model.RacesData
 import com.f1live.app.data.model.SprintData
@@ -25,6 +26,12 @@ interface JolpicaService {
 
     @GET("ergast/f1/current/driverStandings.json")
     suspend fun driverStandings(@Query("limit") limit: Int = 100): Envelope<DriverStandingsData>
+
+    @GET("ergast/f1/{season}/driverStandings.json")
+    suspend fun seasonDriverStandings(
+        @Path("season") season: String,
+        @Query("limit") limit: Int = 100
+    ): Envelope<DriverStandingsData>
 
     @GET("ergast/f1/current/constructorStandings.json")
     suspend fun constructorStandings(@Query("limit") limit: Int = 100): Envelope<ConstructorStandingsData>
@@ -48,6 +55,23 @@ interface JolpicaService {
     suspend fun qualifyingResults(
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
+    ): Envelope<RacesData>
+
+    @GET("ergast/f1/drivers/{driverId}.json")
+    suspend fun driverInfo(@Path("driverId") driverId: String): Envelope<DriversData>
+
+    @GET("ergast/f1/drivers/{driverId}/results.json")
+    suspend fun driverResults(
+        @Path("driverId") driverId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
+    ): Envelope<RacesData>
+
+    @GET("ergast/f1/drivers/{driverId}/qualifying.json")
+    suspend fun driverQualifying(
+        @Path("driverId") driverId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
     ): Envelope<RacesData>
 }
 

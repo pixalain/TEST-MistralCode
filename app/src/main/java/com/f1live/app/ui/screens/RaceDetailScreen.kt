@@ -92,21 +92,24 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
         if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
         if (detail.qualifying.isNotEmpty()) add(DetailTab(R.string.qualifying_tab, "QUALI_LEGACY"))
     }
-    val alphaTabs = detail.alphaSessions.map { s ->
-        DetailTab(
-            when (s.code) {
-                "FP1" -> R.string.session_fp1
-                "FP2" -> R.string.session_fp2
-                "FP3" -> R.string.session_fp3
-                "Q" -> R.string.session_qualifying
-                "SQ" -> R.string.session_sprint_qualifying
-                "SR" -> R.string.sprint_tab
-                "R" -> R.string.race_tab
-                else -> R.string.session_race
-            },
-            s.code
-        )
-    }
+    val hasSprint = detail.race.Sprint != null || detail.sprint.isNotEmpty()
+    val alphaTabs = detail.alphaSessions
+        .filter { s -> hasSprint || (s.code != "SQ" && s.code != "SR") }
+        .map { s ->
+            DetailTab(
+                when (s.code) {
+                    "FP1" -> R.string.session_fp1
+                    "FP2" -> R.string.session_fp2
+                    "FP3" -> R.string.session_fp3
+                    "Q" -> R.string.session_qualifying
+                    "SQ" -> R.string.session_sprint_qualifying
+                    "SR" -> R.string.sprint_tab
+                    "R" -> R.string.race_tab
+                    else -> R.string.session_race
+                },
+                s.code
+            )
+        }
     val tabs = if (detail.alphaSessions.isNotEmpty()) alphaTabs else legacyTabs
 
     val initialIndex = remember(tabs.size, initialTab) {

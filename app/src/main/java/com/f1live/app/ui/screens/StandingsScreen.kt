@@ -1,6 +1,7 @@
 package com.f1live.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,8 @@ import com.f1live.app.ui.teamColor
 @Composable
 fun StandingsScreen(
     state: UiState<StandingsUi>,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onDriverClick: (String, String?) -> Unit = { _, _ -> }
 ) {
     var tab by remember { mutableIntStateOf(0) }
     Column(modifier = Modifier.fillMaxSize()) {
@@ -77,7 +79,7 @@ fun StandingsScreen(
                             SeasonHeader(state.data.season)
                         }
                         items(state.data.drivers, key = { it.Driver.driverId }) { d ->
-                            DriverRow(d)
+                            DriverRow(d, onClick = { onDriverClick(d.Driver.driverId, d.Constructors.firstOrNull()?.name) })
                         }
                     }
                 } else {
@@ -109,10 +111,12 @@ private fun SeasonHeader(season: String) {
 }
 
 @Composable
-private fun DriverRow(d: DriverStanding) {
+private fun DriverRow(d: DriverStanding, onClick: () -> Unit = {}) {
     val team = d.Constructors.firstOrNull()
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(

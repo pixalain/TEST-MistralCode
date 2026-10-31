@@ -33,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.f1live.app.ui.F1ViewModel
 import com.f1live.app.ui.screens.RaceDetailScreen
+import com.f1live.app.ui.screens.DriverProfileScreen
 import com.f1live.app.ui.screens.RacesScreen
 import com.f1live.app.ui.screens.SessionsScreen
 import com.f1live.app.ui.screens.StandingsScreen
@@ -56,6 +57,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val standingsState by viewModel.standings.collectAsStateWithLifecycle()
     val racesState by viewModel.races.collectAsStateWithLifecycle()
     val detailState by viewModel.raceDetail.collectAsStateWithLifecycle()
+    val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -111,7 +113,26 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
             composable("standings") {
                 StandingsScreen(
                     state = standingsState,
-                    onRefresh = { viewModel.refreshStandings() }
+                    onRefresh = { viewModel.refreshStandings() },
+                    onDriverClick = { driverId, team ->
+                        navController.navigate("driver/$driverId?team=$team")
+                    }
+                )
+            }
+            composable(
+                route = "driver/{driverId}?team={team}",
+                arguments = listOf(
+                    navArgument("driverId") { type = NavType.StringType },
+                    navArgument("team") { type = NavType.StringType; defaultValue = ""; nullable = true }
+                )
+            ) { entry ->
+                val driverId = entry.arguments?.getString("driverId") ?: ""
+                val team = entry.arguments?.getString("team")?.ifBlank { null }
+                LaunchedEffect(driverId) { viewModel.loadDriver(driverId, team) }
+                DriverProfileScreen(
+                    state = driverState,
+                    onBack = { navController.popBackStack() },
+                    onRefresh = { viewModel.loadDriver(driverId, team) }
                 )
             }
             composable("races") {

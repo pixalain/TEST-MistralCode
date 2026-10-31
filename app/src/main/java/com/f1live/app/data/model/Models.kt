@@ -8,12 +8,14 @@ data class Envelope<T>(val MRData: T)
 
 @Serializable
 data class DriverStandingsData(
-    @SerialName("StandingsTable") val standingsTable: StandingsTable
+    @SerialName("StandingsTable") val standingsTable: StandingsTable,
+    @SerialName("total") val total: String? = null
 )
 
 @Serializable
 data class ConstructorStandingsData(
-    @SerialName("StandingsTable") val standingsTable: StandingsTable
+    @SerialName("StandingsTable") val standingsTable: StandingsTable,
+    @SerialName("total") val total: String? = null
 )
 
 @Serializable
@@ -70,7 +72,19 @@ data class Constructor(
 
 @Serializable
 data class RacesData(
-    @SerialName("RaceTable") val raceTable: RaceTable
+    @SerialName("RaceTable") val raceTable: RaceTable,
+    @SerialName("total") val total: String? = null
+)
+
+@Serializable
+data class DriversData(
+    @SerialName("DriverTable") val driverTable: DriverTable
+)
+
+@Serializable
+data class DriverTable(
+    val driverId: String? = null,
+    val Drivers: List<Driver> = emptyList()
 )
 
 @Serializable
@@ -95,7 +109,8 @@ data class Race(
     val Qualifying: Session? = null,
     val Sprint: Session? = null,
     val Results: List<Result>? = null,
-    val QualifyingResults: List<QualifyingResult>? = null
+    val QualifyingResults: List<QualifyingResult>? = null,
+    val SprintResults: List<Result>? = null
 ) {
     val locality: String get() = Circuit.Location.locality
     val country: String get() = Circuit.Location.country
