@@ -1,5 +1,10 @@
 package com.f1live.app.data.api
 
+import com.f1live.app.data.model.AlphaEnvelope
+import com.f1live.app.data.model.AlphaResultRow
+import com.f1live.app.data.model.AlphaResultsIndex
+import com.f1live.app.data.model.AlphaRound
+import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
 import com.f1live.app.data.model.Envelope
@@ -46,6 +51,21 @@ interface JolpicaService {
     ): Envelope<RacesData>
 }
 
+interface AlphaService {
+
+    @GET("f1/alpha/core/rounds/")
+    suspend fun rounds(@Query("year") year: Int): AlphaEnvelope<List<AlphaRound>>
+
+    @GET("f1/alpha/results/{roundId}/")
+    suspend fun resultsIndex(@Path("roundId") roundId: String): AlphaEnvelope<AlphaResultsIndex>
+
+    @GET("f1/alpha/results/{roundId}/{code}/")
+    suspend fun sessionResults(
+        @Path("roundId") roundId: String,
+        @Path("code") code: String
+    ): AlphaEnvelope<AlphaSessionResults>
+}
+
 object ApiClient {
 
     private val json = Json {
@@ -54,6 +74,12 @@ object ApiClient {
     }
 
     private val okHttp = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val req = chain.request().newBuilder()
+                .header("User-Agent", "F1LiveApp/1.0.0")
+                .build()
+            chain.proceed(req)
+        }
         .addInterceptor(
             HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC
@@ -63,12 +89,15 @@ object ApiClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    val service: JolpicaService = Retrofit.Builder()
+    private val retrofit = Retrofit.Builder()
         .baseUrl("https://api.jolpi.ca/")
         .client(okHttp)
         .addConverterFactory(
             json.asConverterFactory("application/json".toMediaType())
         )
         .build()
-        .create(JolpicaService::class.java)
+
+    val service: JolpicaService = retrofit.create(JolpicaService::class.java)
+
+    val alpha: AlphaService = retrofit.create(AlphaService::class.java)
 }

@@ -1,5 +1,7 @@
 package com.f1live.app
 
+import com.f1live.app.data.model.AlphaEnvelope
+import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
 import com.f1live.app.data.model.RacesData
@@ -46,6 +48,21 @@ class JsonParsingTest {
         assertEquals("1", r.displayPosition)
         assertEquals("1:35:10.000", r.Time?.time)
         assertEquals("25", r.points)
+    }
+
+    @Test
+    fun parsesAlphaFpResults() {
+        val alphaFp = """
+            {"metadata":{"timestamp":"2026-10-31T21:56:40Z"},"data":{"code":"FP1","title":"Practice 1","local_timestamp":"2026-03-27 11:30:00+09:00","results":[{"driver":{"id":"driver_dPPwWNxA","abbreviation":"RUS","given_name":"George","family_name":"Russell"},"team":{"name":"Mercedes","primary_color":"#00D7B6"},"position":1,"position_text":"1","time":"1:31.666","is_classified":true,"laps":27,"car_number":63}]}}
+        """.trimIndent()
+        val env = json.decodeFromString<AlphaEnvelope<AlphaSessionResults>>(alphaFp)
+        val body = env.data!!
+        assertEquals("FP1", body.code)
+        val row = body.results.first()
+        assertEquals("George Russell", row.driver.fullName)
+        assertEquals("1:31.666", row.time)
+        assertEquals("1", row.displayPosition)
+        assertEquals("#00D7B6", row.team?.primary_color)
     }
 
     @Test

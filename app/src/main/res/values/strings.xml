@@ -27,6 +27,7 @@
     <string name="session_fp3">Essais libres 3</string>
     <string name="session_qualifying">Qualifications</string>
     <string name="session_sprint">Sprint</string>
+    <string name="session_sprint_qualifying">Sprint Qualifs</string>
     <string name="session_race">Course</string>
     <string name="session_not_scheduled">Non programmée</string>
     <string name="session_done">Terminée</string>

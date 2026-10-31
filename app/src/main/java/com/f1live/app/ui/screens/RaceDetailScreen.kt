@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -42,10 +42,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.f1live.app.R
+import com.f1live.app.data.model.AlphaResultRow
 import com.f1live.app.data.model.Result
 import com.f1live.app.data.repository.RaceDetail
+import com.f1live.app.data.repository.SessionResults
 import com.f1live.app.ui.UiState
 import com.f1live.app.ui.teamColor
+
+private data class DetailTab(val labelRes: Int, val code: String?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,32 +78,64 @@ fun RaceDetailScreen(
             when (state) {
                 is UiState.Loading -> LoadingBox()
                 is UiState.Error -> ErrorBox(state.message, onRefresh)
-                is UiState.Success -> {
-                    var tab by remember { mutableIntStateOf(0) }
-                    val hasSprint = state.data.sprint.isNotEmpty()
-                    val hasQuali = state.data.qualifying.isNotEmpty()
-                    val tabs = buildList {
-                        add(R.string.race_tab)
-                        if (hasSprint) add(R.string.sprint_tab)
-                        if (hasQuali) add(R.string.qualifying_tab)
-                    }
-                    Column {
-                        TabRow(selectedTabIndex = tab.coerceAtMost(tabs.lastIndex)) {
-                            tabs.forEachIndexed { i, label ->
-                                Tab(
-                                    selected = tab == i,
-                                    onClick = { tab = i },
-                                    text = { Text(stringResource(label)) }
-                                )
-                            }
-                        }
-                        val currentTab = tab.coerceAtMost(tabs.lastIndex)
-                        when (tabs[currentTab]) {
-                            R.string.race_tab -> ResultsList(state.data.race, state.data.results)
-                            R.string.sprint_tab -> ResultsList(state.data.race, state.data.sprint)
-                            else -> QualifyingList(state.data.race, state.data.qualifying)
-                        }
-                    }
+                is UiState.Success -> DetailContent(state.data)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailContent(detail: RaceDetail) {
+    val legacyTabs = buildList {
+        add(DetailTab(R.string.race_tab, null))
+        if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
+        if (detail.qualifying.isNotEmpty()) add(DetailTab(R.string.qualifying_tab, "QUALI_LEGACY"))
+    }
+    val alphaTabs = detail.alphaSessions.map { s ->
+        DetailTab(
+            when (s.code) {
+                "FP1" -> R.string.session_fp1
+                "FP2" -> R.string.session_fp2
+                "FP3" -> R.string.session_fp3
+                "Q" -> R.string.session_qualifying
+                "SQ" -> R.string.session_sprint_qualifying
+                "SR" -> R.string.sprint_tab
+                "R" -> R.string.race_tab
+                else -> R.string.session_race
+            },
+            s.code
+        )
+    }
+    val tabs = if (alphaTabs.isNotEmpty()) alphaTabs else legacyTabs
+
+    var tab by remember(tabs.size) { mutableIntStateOf(0) }
+    val current = tabs[tab.coerceAtMost(tabs.lastIndex)]
+
+    Column {
+        val many = tabs.size > 4
+        if (many) {
+            ScrollableTabRow(selectedTabIndex = tab.coerceAtMost(tabs.lastIndex), edgePadding = 12.dp) {
+                tabs.forEachIndexed { i, t ->
+                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.labelRes)) })
+                }
+            }
+        } else {
+            TabRow(selectedTabIndex = tab.coerceAtMost(tabs.lastIndex)) {
+                tabs.forEachIndexed { i, t ->
+                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.labelRes)) })
+                }
+            }
+        }
+        when (current.code) {
+            null -> ResultsList(detail.race, detail.results)
+            "SPRINT_LEGACY" -> ResultsList(detail.race, detail.sprint)
+            "QUALI_LEGACY" -> LegacyQualifyingList(detail.race, detail.qualifying)
+            else -> {
+                val session = detail.alphaSessions.firstOrNull { it.code == current.code }
+                if (session == null) {
+                    ResultsList(detail.race, detail.results)
+                } else {
+                    AlphaResultsList(detail.race, session)
                 }
             }
         }
@@ -132,7 +168,33 @@ private fun ResultsList(race: com.f1live.app.data.model.Race, results: List<Resu
 }
 
 @Composable
-private fun QualifyingList(race: com.f1live.app.data.model.Race, qualifying: List<com.f1live.app.data.model.QualifyingResult>) {
+private fun AlphaResultsList(race: com.f1live.app.data.model.Race, session: SessionResults) {
+    if (session.rows.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_results_yet))
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            item {
+                Text(
+                    text = "${race.raceName} — ${session.title}" +
+                        (session.timestamp?.let { " · $it" } ?: ""),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+            items(session.rows, key = { "${it.driver.id}-${it.position}" }) { row ->
+                AlphaRow(row)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegacyQualifyingList(race: com.f1live.app.data.model.Race, qualifying: List<com.f1live.app.data.model.QualifyingResult>) {
     if (qualifying.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.no_results_yet))
@@ -144,7 +206,7 @@ private fun QualifyingList(race: com.f1live.app.data.model.Race, qualifying: Lis
         ) {
             item {
                 Text(
-                    text = "${race.raceName} — ${formatRaceDate(race.date)}",
+                    text = "${race.raceName} — ${stringResource(R.string.session_qualifying)}",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -194,6 +256,67 @@ private fun QualifyingList(race: com.f1live.app.data.model.Race, qualifying: Lis
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlphaRow(row: AlphaResultRow) {
+    val colorHex = row.team?.primary_color
+    val dotColor = colorHex?.let {
+        runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrDefault(
+            teamColor(null)
+        )
+    } ?: teamColor(null)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = row.displayPosition,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.width(30.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = row.driver.fullName.uppercase(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                val sub = buildList {
+                    row.team?.name?.let { add(it) }
+                    row.status?.let { add(it.lowercase().replaceFirstChar { c -> c.uppercase() }) }
+                    row.laps?.let { add("$it tours") }
+                }.joinToString(" · ")
+                if (sub.isNotBlank()) {
+                    Text(
+                        text = sub,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            row.time?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
