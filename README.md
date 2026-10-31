@@ -12,8 +12,8 @@ Les données proviennent de l'API ouverte [Jolpica F1](https://github.com/jolpic
 
 ## Installation sur Android
 
-1. Téléchargez le fichier `app-release.apk` depuis la dernière
-   [Release GitHub](../../releases) (ou l'artifact `f1live-apk` des Actions CI).
+1. Téléchargez l'APK signé : **[app-release.apk](https://raw.githubusercontent.com/pixalain/TEST-MistralCode/vibe/f1-live-app-bae9bb/releases/app-release.apk)**
+   ( branche `vibe/f1-live-app-bae9bb`, dossier `releases/` ; l'artifact `f1live-apk` est aussi disponible dans l'onglet **Actions** du dépôt ).
 2. Ouvrez-le sur votre téléphone Android (Android 8.0 / API 26 minimum).
 3. Si demandé, autorisez l'installation depuis cette source ("Sources inconnues").
 4. Ouvrez **F1 Live**.
