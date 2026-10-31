@@ -5,6 +5,8 @@ on:
     branches: [main, 'vibe/**']
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - '.github/workflows/build-apps.yml'
   workflow_dispatch:
 
 jobs:
