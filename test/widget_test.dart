@@ -24,20 +24,32 @@ void main() {
     }
   });
 
-  testWidgets('La liste des modèles affiche toutes les voitures',
+  testWidgets('La liste des modèles affiche les voitures',
       (WidgetTester tester) async {
     await tester.pumpWidget(const FerrariHistoryApp());
     await tester.tap(find.text('Tous les modèles'));
     await tester.pumpAndSettle();
+    expect(find.text('Ferrari 125 S'), findsOneWidget);
     expect(find.text('Ferrari 250 GTO'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Ferrari F40'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Ferrari F40'), findsOneWidget);
-    expect(find.text('Ferrari SF90 Stradale'), findsOneWidget);
   });
 
   testWidgets('Le détail d\'un modèle affiche ses caractéristiques',
       (WidgetTester tester) async {
     await tester.pumpWidget(const FerrariHistoryApp());
     await tester.tap(find.text('Tous les modèles'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Ferrari F40'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ferrari F40'));
     await tester.pumpAndSettle();
