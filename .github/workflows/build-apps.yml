@@ -49,7 +49,6 @@ jobs:
   ios:
     name: iOS (build sans signature)
     runs-on: macos-14
-    # macOS : ne lancer que sur push pour éviter que la PR n'annule le run en cours
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
