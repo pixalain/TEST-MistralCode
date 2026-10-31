@@ -23,8 +23,8 @@ jobs:
       - name: Package VST3 as zip
         shell: pwsh
         run: |
-          $src = "build/MonPremierVST_artefacts/Release/VST3/MonPremierVST.vst3"
-          Compress-Archive -Path $src -DestinationPath "MonPremierVST-Windows-v0.3.0.zip" -Force
+          $src = "build/VSTbyIA_artefacts/Release/VST3/VST by IA.vst3"
+          Compress-Archive -Path $src -DestinationPath "VST-by-IA-Windows-v0.4.0.zip" -Force
 
       - name: Install NSIS
         run: choco install nsis -y
@@ -35,19 +35,19 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MonPremierVST-Windows
+          name: VST-by-IA-Windows
           path: |
-            MonPremierVST-Windows-v0.3.0.zip
-            MonPremierVST-Setup-v0.3.0.exe
+            VST-by-IA-Windows-v0.4.0.zip
+            VST-by-IA-Setup-v0.4.0.exe
 
       - name: Create GitHub Release with binaries
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.3.0
-          name: MonPremierVST v0.3.0
+          tag_name: v0.4.0
+          name: VST by IA v0.4.0
           files: |
-            MonPremierVST-Windows-v0.3.0.zip
-            MonPremierVST-Setup-v0.3.0.exe
+            VST-by-IA-Windows-v0.4.0.zip
+            VST-by-IA-Setup-v0.4.0.exe
           draft: false
           prerelease: false

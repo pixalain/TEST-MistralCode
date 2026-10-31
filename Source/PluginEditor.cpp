@@ -45,7 +45,7 @@ void MonPremierVSTAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (16.0f);
-    g.drawFittedText ("MonPremierVST - Gain + Reverb", getLocalBounds().removeFromTop (30),
+    g.drawFittedText ("VST by IA - Gain + Reverb", getLocalBounds().removeFromTop (30),
                       juce::Justification::centred, 1);
 }
 

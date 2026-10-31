@@ -45,7 +45,7 @@ MonPremierVSTAudioProcessor::MonPremierVSTAudioProcessor()
 
 MonPremierVSTAudioProcessor::~MonPremierVSTAudioProcessor() = default;
 
-const juce::String MonPremierVSTAudioProcessor::getName() const { return "MonPremierVST"; }
+const juce::String MonPremierVSTAudioProcessor::getName() const { return "VST by IA"; }
 
 bool MonPremierVSTAudioProcessor::acceptsMidi() const   { return false; }
 bool MonPremierVSTAudioProcessor::producesMidi() const  { return false; }
