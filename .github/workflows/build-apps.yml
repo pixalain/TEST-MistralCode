@@ -35,22 +35,11 @@ jobs:
       - name: Construire l'APK Android (release)
         run: flutter build apk --release
 
-      - name: Publier l'APK en artefact
+      - name: Publier l'APK en artefact (lien de téléchargement Android)
         uses: actions/upload-artifact@v4
         with:
           name: ferrari-history-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 365
-
-      - name: Créer/mettre à jour la release GitHub avec l'APK (toutes branches)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: app-latest
-          name: Ferrari History — dernière build (APK Android + iOS)
-          files: build/app/outputs/flutter-apk/app-release.apk
-          draft: false
-          make_latest: true
-          update_release: true
 
   ios:
     name: iOS (build sans signature)
@@ -80,19 +69,8 @@ jobs:
           cd build/ios/iphonesimulator
           zip -r ../../../../ferrari-history-ios-simulator.zip Runner.app
 
-      - name: Publier le .app iOS en artefact
+      - name: Publier le .app iOS en artefact (lien de téléchargement iOS)
         uses: actions/upload-artifact@v4
         with:
           name: ferrari-history-ios-app
           path: build/ferrari-history-ios-simulator.zip
-          retention-days: 365
-
-      - name: Ajouter le build iOS à la release GitHub
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: app-latest
-          name: Ferrari History — dernière build (APK Android + iOS)
-          files: build/ferrari-history-ios-simulator.zip
-          draft: false
-          make_latest: true
-          update_release: true
