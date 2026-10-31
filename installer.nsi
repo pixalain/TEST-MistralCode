@@ -5,7 +5,7 @@
 !define PUBLISHER "Pixalain"
 
 Name "${PLUGIN_NAME} v${VERSION}"
-OutFile "MonPremierVST-Setup-v${VERSION}.exe"
+OutFile "VST-by-IA-Setup-v${VERSION}.exe"
 InstallDir "$PROGRAMFILES64\Common Files\VST3"
 InstallDirRegKey HKLM "Software\${PUBLISHER}\${PLUGIN_NAME}" "InstallDir"
 RequestExecutionLevel admin
