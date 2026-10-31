@@ -1,0 +1,16 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+packages
+lib/generated_plugin_registrant.dart
+pubspec.lock
+build/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+local.properties
+.appium/
+android/local.properties
+ios/.symlinks/
+ios/Flutter/.last_build_id
