@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">F1 Live</string>
+    <string name="tab_drivers">Pilotes</string>
+    <string name="tab_teams">Écuries</string>
+    <string name="tab_standings">Classements</string>
+    <string name="tab_races">Grands Prix</string>
+    <string name="season_classification">Classement pilotes — saison %1$s</string>
+    <string name="season_calendar">Calendrier %1$s</string>
+    <string name="pts">pts</string>
+    <string name="wins">Victoires</string>
+    <string name="retry">Réessayer</string>
+    <string name="refresh">Actualiser</string>
+    <string name="back">Retour</string>
+    <string name="error_prefix">Erreur : %1$s</string>
+    <string name="finished">Terminé</string>
+    <string name="upcoming">À venir</string>
+    <string name="race_results_title">Résultats — GP n°%1$s</string>
+    <string name="race_tab">Course</string>
+    <string name="sprint_tab">Sprint</string>
+    <string name="no_results_yet">Résultats pas encore disponibles pour ce Grand Prix.</string>
+</resources>
