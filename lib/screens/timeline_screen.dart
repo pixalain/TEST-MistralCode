@@ -34,7 +34,7 @@ class TimelineScreen extends StatelessWidget {
                       Expanded(
                         child: Container(
                           width: 2,
-                          color: FerrariHistoryApp.rossoCorsa.withOpacity(0.4),
+                          color: FerrariHistoryApp.rossoCorsa.withValues(alpha: 0.4),
                         ),
                       ),
                   ],
