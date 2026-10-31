@@ -25,20 +25,17 @@ void main() {
     }
   });
 
-  testWidgets('La liste des modèles affiche les voitures',
+  testWidgets('La liste affiche les modèles et la recherche filtre',
       (WidgetTester tester) async {
     await tester.pumpWidget(const FerrariHistoryApp());
     await tester.tap(find.text('Tous les modèles'));
     await tester.pumpAndSettle();
     expect(find.text('Ferrari 125 S'), findsOneWidget);
     expect(find.text('Ferrari 250 GTO'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Ferrari F40'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.enterText(find.byType(TextField), 'F40');
     await tester.pumpAndSettle();
     expect(find.text('Ferrari F40'), findsOneWidget);
+    expect(find.text('Ferrari 250 GTO'), findsNothing);
   });
 
   testWidgets('Le détail d\'un modèle affiche ses caractéristiques',
@@ -46,11 +43,7 @@ void main() {
     await tester.pumpWidget(const FerrariHistoryApp());
     await tester.tap(find.text('Tous les modèles'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Ferrari F40'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.enterText(find.byType(TextField), 'F40');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ferrari F40'));
     await tester.pumpAndSettle();
