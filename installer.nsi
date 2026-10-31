@@ -15,7 +15,7 @@ Page instfiles
 
 Section "Install"
   SetOutPath "$INSTDIR"
-  File /r "build\MonPremierVST_artefacts\Release\VST3\${PLUGIN_NAME}.vst3"
+  File /r "build\VSTbyIA_artefacts\Release\VST3\VST by IA.vst3"
 
   WriteRegStr HKLM "Software\${PUBLISHER}\${PLUGIN_NAME}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PLUGIN_NAME}" "DisplayName" "${PLUGIN_NAME} v${VERSION}"
