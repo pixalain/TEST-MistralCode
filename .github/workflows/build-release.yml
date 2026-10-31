@@ -26,17 +26,11 @@ jobs:
           $src = "build/MonPremierVST_artefacts/Release/VST3/MonPremierVST.vst3"
           Compress-Archive -Path $src -DestinationPath "MonPremierVST-Windows-v0.1.0.zip" -Force
 
-      - name: Download NSIS
-        shell: pwsh
-        run: |
-          $url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10.1/nsis-3.10.1-setup.exe"
-          Invoke-WebRequest -Uri $url -OutFile nsis-setup.exe
-          Start-Process -FilePath nsis-setup.exe -ArgumentList "/S" -Wait
+      - name: Install NSIS
+        run: choco install nsis -y
 
       - name: Build installer with NSIS
-        shell: pwsh
-        run: |
-          & "C:\Program Files (x86)\NSIS\makensis.exe" /V2 installer.nsi
+        run: makensis /V2 installer.nsi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
