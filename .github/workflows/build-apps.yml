@@ -2,7 +2,7 @@ name: Build Android & iOS
 
 on:
   push:
-    branches: [main, 'vibe/**']
+    branches: [main, 'vibe/**', 'tmp-*']
   workflow_dispatch:
 
 jobs:
