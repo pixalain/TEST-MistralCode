@@ -38,6 +38,8 @@ target_compile_definitions(MonPremierVST PUBLIC
 
 target_link_libraries(MonPremierVST PRIVATE
     juce::juce_audio_processors
+    juce::juce_audio_utils
+    juce::juce_audio_devices
     juce::juce_gui_extra
     juce::juce_recommended_config_flags
     juce::juce_recommended_warning_flags
