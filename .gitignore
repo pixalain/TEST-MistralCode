@@ -1,0 +1,4 @@
+build/
+*.vst3/
+*.zip
+*-Setup.exe

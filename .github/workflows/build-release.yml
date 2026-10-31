@@ -1,0 +1,59 @@
+name: Build VST3 release
+
+on:
+  push:
+    branches: [ main, vibe/mon-premier-vst-1613d1 ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package VST3 as zip
+        shell: pwsh
+        run: |
+          $src = "build/MonPremierVST_artefacts/Release/VST3/MonPremierVST.vst3"
+          Compress-Archive -Path $src -DestinationPath "MonPremierVST-Windows-v0.1.0.zip" -Force
+
+      - name: Download NSIS
+        shell: pwsh
+        run: |
+          $url = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10.1/nsis-3.10.1-setup.exe"
+          Invoke-WebRequest -Uri $url -OutFile nsis-setup.exe
+          Start-Process -FilePath nsis-setup.exe -ArgumentList "/S" -Wait
+
+      - name: Build installer with NSIS
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\NSIS\makensis.exe" /V2 installer.nsi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MonPremierVST-Windows
+          path: |
+            MonPremierVST-Windows-v0.1.0.zip
+            MonPremierVST-Setup-v0.1.0.exe
+
+      - name: Create GitHub Release with binaries
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: MonPremierVST v0.1.0
+          files: |
+            MonPremierVST-Windows-v0.1.0.zip
+            MonPremierVST-Setup-v0.1.0.exe
+          draft: false
+          prerelease: false
