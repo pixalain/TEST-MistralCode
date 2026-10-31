@@ -119,7 +119,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     state = racesState,
                     onRefresh = { viewModel.refreshRaces() },
                     onRaceClick = { race ->
-                        navController.navigate("race/${race.round}")
+                        navController.navigate("race/${race.round}/")
                     }
                 )
             }
@@ -127,19 +127,24 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                 SessionsScreen(
                     state = racesState,
                     onRefresh = { viewModel.refreshRaces() },
-                    onRaceClick = { race ->
-                        navController.navigate("race/${race.round}")
+                    onRaceClick = { race, tab ->
+                        navController.navigate("race/${race.round}/$tab")
                     }
                 )
             }
             composable(
-                route = "race/{round}",
-                arguments = listOf(navArgument("round") { type = NavType.StringType })
+                route = "race/{round}/{tab}",
+                arguments = listOf(
+                    navArgument("round") { type = NavType.StringType },
+                    navArgument("tab") { type = NavType.StringType; defaultValue = "" }
+                )
             ) { entry ->
                 val round = entry.arguments?.getString("round") ?: "1"
+                val tab = entry.arguments?.getString("tab").orEmpty()
                 LaunchedEffect(round) { viewModel.loadRace(round) }
                 RaceDetailScreen(
                     round = round,
+                    initialTab = tab,
                     state = detailState,
                     onBack = { navController.popBackStack() },
                     onRefresh = { viewModel.loadRace(round) }

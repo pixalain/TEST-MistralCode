@@ -1,6 +1,7 @@
 package com.f1live.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +54,18 @@ data class SessionInfo(
     val labelRes: Int,
     val session: Session?,
     val isRace: Boolean = false
-)
+) {
+    val alphaCode: String
+        get() = when (key) {
+            "fp1" -> "FP1"
+            "fp2" -> "FP2"
+            "fp3" -> "FP3"
+            "sq" -> "SQ"
+            "sprint" -> "SR"
+            "quali" -> "Q"
+            else -> "R"
+        }
+}
 
 fun raceSessions(race: Race): List<SessionInfo> = listOfNotNull(
     race.firstPractice?.let { SessionInfo("fp1", R.string.session_fp1, it) },
@@ -119,7 +131,7 @@ fun findCurrentOrLastRace(races: List<Race>): Race? {
 fun SessionsScreen(
     state: UiState<RacesUi>,
     onRefresh: () -> Unit,
-    onRaceClick: (Race) -> Unit
+    onRaceClick: (Race, String) -> Unit
 ) {
     when (state) {
         is UiState.Loading -> LoadingBox()
@@ -159,7 +171,7 @@ fun SessionsScreen(
                     SessionCard(
                         info = info,
                         status = sessionStatus(info, now),
-                        onClick = { onRaceClick(race) }
+                        onClick = { onRaceClick(race, info.alphaCode) }
                     )
                 }
             }
@@ -177,7 +189,9 @@ private fun SessionCard(info: SessionInfo, status: SessionStatus, onClick: () ->
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(

@@ -55,6 +55,7 @@ private data class DetailTab(val labelRes: Int, val code: String?)
 @Composable
 fun RaceDetailScreen(
     round: String,
+    initialTab: String = "",
     state: UiState<RaceDetail>,
     onBack: () -> Unit,
     onRefresh: () -> Unit
@@ -78,14 +79,14 @@ fun RaceDetailScreen(
             when (state) {
                 is UiState.Loading -> LoadingBox()
                 is UiState.Error -> ErrorBox(state.message, onRefresh)
-                is UiState.Success -> DetailContent(state.data)
+                is UiState.Success -> DetailContent(state.data, initialTab)
             }
         }
     }
 }
 
 @Composable
-private fun DetailContent(detail: RaceDetail) {
+private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
     val legacyTabs = buildList {
         add(DetailTab(R.string.race_tab, null))
         if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
@@ -108,7 +109,11 @@ private fun DetailContent(detail: RaceDetail) {
     }
     val tabs = if (alphaTabs.isNotEmpty()) alphaTabs else legacyTabs
 
-    var tab by remember(tabs.size) { mutableIntStateOf(0) }
+    val initialIndex = remember(tabs.size, initialTab) {
+        if (initialTab.isBlank()) 0
+        else tabs.indexOfFirst { it.code == initialTab }.takeIf { it >= 0 } ?: 0
+    }
+    var tab by remember(tabs.size) { mutableIntStateOf(initialIndex) }
     val current = tabs[tab.coerceAtMost(tabs.lastIndex)]
 
     Column {
