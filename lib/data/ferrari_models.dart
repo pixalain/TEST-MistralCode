@@ -45,7 +45,7 @@ const List<CarModel> ferrariModels = [
     yearEnd: 1964,
     category: 'Grand Tourisme / Course',
     description:
-        'Icône absolue de l\'automobile, la 250 GTO remporte trois titres mondiaux des constructeurs (1962-1964). Produite à seulement 36 exemplaires, elle est aujourd\'hui la voiture la plus chère du monde (ventes dépassant 70 M$).',
+        'Icône absolue de l\'automobile, la 250 GTO remporte trois titres mondiaux des constructeurs (1962-1964). Produite à seulement 36 exemplaires, elle est aujourd\'hui la voiture la plus chère du monde (ventes dépassant 70 M\$).',
     engine: 'V12 Colombo 3,0 L',
     power: '300 ch',
     torque: '294 N·m',
@@ -64,7 +64,7 @@ const List<CarModel> ferrariModels = [
     yearEnd: 1963,
     category: 'Cabriolet',
     description:
-        'Roadster luxueux dessiné par Scaglietti sur une base de 250 GT, la California Spyder est devenue l\'une des Ferrari les plus recherchées : un exemplaire s\'est vendu plus de 18 M$.',
+        'Roadster luxueux dessiné par Scaglietti sur une base de 250 GT, la California Spyder est devenue l\'une des Ferrari les plus recherchées : un exemplaire s\'est vendu plus de 18 M\$.',
     engine: 'V12 Colombo 3,0 L',
     power: '240–280 ch',
     torque: '—',
