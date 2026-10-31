@@ -3,6 +3,8 @@
 Ton premier plugin VST3 (effet de gain / volume), développé avec [JUCE](https://juce.com) 8.0.15.
 Licence : GPL v3 (voir `LICENSE`). Le SDK VST3 de Steinberg est sous licence MIT depuis la v3.8.0.
 
+![Aperçu du plugin MonPremierVST v0.2.0](https://raw.githubusercontent.com/pixalain/TEST-MistralCode/releases/assets/monpremiervst-mockup-v0.2.0.jpg)
+
 ## Télécharger et installer (Windows 64 bits)
 
 1. Va dans l'onglet **[Releases](https://github.com/pixalain/TEST-MistralCode/releases)** de ce dépôt.
