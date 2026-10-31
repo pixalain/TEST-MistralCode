@@ -9,7 +9,8 @@ import com.f1live.app.data.model.Result
 data class RaceDetail(
     val race: Race,
     val results: List<Result>,
-    val sprint: List<Result>
+    val sprint: List<Result>,
+    val qualifying: List<com.f1live.app.data.model.QualifyingResult> = emptyList()
 )
 
 class F1Repository(
@@ -44,6 +45,12 @@ class F1Repository(
         } catch (e: Exception) {
             emptyList()
         }
-        return RaceDetail(race, results, sprint)
+        val qualifying = try {
+            service.qualifyingResults(round).MRData.raceTable.Races.firstOrNull()
+                ?.QualifyingResults.orEmpty()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        return RaceDetail(race, results, sprint, qualifying)
     }
 }

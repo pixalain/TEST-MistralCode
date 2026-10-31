@@ -5,6 +5,7 @@
     <string name="tab_teams">Écuries</string>
     <string name="tab_standings">Classements</string>
     <string name="tab_races">Grands Prix</string>
+    <string name="tab_sessions">Séances</string>
     <string name="season_classification">Classement pilotes — saison %1$s</string>
     <string name="season_calendar">Calendrier %1$s</string>
     <string name="pts">pts</string>
@@ -18,5 +19,18 @@
     <string name="race_results_title">Résultats — GP n°%1$s</string>
     <string name="race_tab">Course</string>
     <string name="sprint_tab">Sprint</string>
+    <string name="qualifying_tab">Qualifs</string>
     <string name="no_results_yet">Résultats pas encore disponibles pour ce Grand Prix.</string>
+    <string name="next_race_sessions">Prochain GP : %1$s — programme des séances</string>
+    <string name="session_fp1">Essais libres 1</string>
+    <string name="session_fp2">Essais libres 2</string>
+    <string name="session_fp3">Essais libres 3</string>
+    <string name="session_qualifying">Qualifications</string>
+    <string name="session_sprint">Sprint</string>
+    <string name="session_race">Course</string>
+    <string name="session_not_scheduled">Non programmée</string>
+    <string name="session_done">Terminée</string>
+    <string name="session_upcoming">À venir</string>
+    <string name="view_results">Voir les résultats</string>
+    <string name="all_sessions_done">Toutes les séances de ce week-end sont terminées.</string>
 </resources>

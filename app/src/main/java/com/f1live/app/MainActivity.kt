@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SportsMotorsports
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +34,7 @@ import androidx.navigation.navArgument
 import com.f1live.app.ui.F1ViewModel
 import com.f1live.app.ui.screens.RaceDetailScreen
 import com.f1live.app.ui.screens.RacesScreen
+import com.f1live.app.ui.screens.SessionsScreen
 import com.f1live.app.ui.screens.StandingsScreen
 import com.f1live.app.ui.theme.F1LiveTheme
 
@@ -66,7 +68,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     IconButton(onClick = {
                         when (currentRoute) {
                             "standings" -> viewModel.refreshStandings()
-                            "races" -> viewModel.refreshRaces()
+                            "races", "sessions" -> viewModel.refreshRaces()
                             else -> {}
                         }
                     }) {
@@ -92,6 +94,12 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     icon = { Icon(Icons.Default.Flag, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_races)) }
                 )
+                NavigationBarItem(
+                    selected = currentRoute == "sessions",
+                    onClick = { navController.navigate("sessions") { popUpTo(0) } },
+                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_sessions)) }
+                )
             }
         }
     ) { padding ->
@@ -108,6 +116,15 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
             }
             composable("races") {
                 RacesScreen(
+                    state = racesState,
+                    onRefresh = { viewModel.refreshRaces() },
+                    onRaceClick = { race ->
+                        navController.navigate("race/${race.round}")
+                    }
+                )
+            }
+            composable("sessions") {
+                SessionsScreen(
                     state = racesState,
                     onRefresh = { viewModel.refreshRaces() },
                     onRaceClick = { race ->

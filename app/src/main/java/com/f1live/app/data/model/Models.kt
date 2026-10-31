@@ -92,7 +92,8 @@ data class Race(
     @SerialName("ThirdPractice") val thirdPractice: Session? = null,
     val Qualifying: Session? = null,
     val Sprint: Session? = null,
-    val Results: List<Result>? = null
+    val Results: List<Result>? = null,
+    val QualifyingResults: List<QualifyingResult>? = null
 ) {
     val locality: String get() = Circuit.Location.locality
     val country: String get() = Circuit.Location.country
@@ -120,6 +121,20 @@ data class SprintRace(
     val time: String? = null,
     val Sprint: List<Result>? = null
 )
+
+@Serializable
+data class QualifyingResult(
+    val number: String? = null,
+    val position: String,
+    val Driver: Driver,
+    val Constructor: Constructor,
+    val Q1: String? = null,
+    val Q2: String? = null,
+    val Q3: String? = null
+) {
+    val bestTime: String?
+        get() = listOfNotNull(Q3, Q2, Q1).firstOrNull()
+}
 
 @Serializable
 data class Result(

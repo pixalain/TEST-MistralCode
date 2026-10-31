@@ -77,34 +77,120 @@ fun RaceDetailScreen(
                 is UiState.Success -> {
                     var tab by remember { mutableIntStateOf(0) }
                     val hasSprint = state.data.sprint.isNotEmpty()
+                    val hasQuali = state.data.qualifying.isNotEmpty()
+                    val tabs = buildList {
+                        add(R.string.race_tab)
+                        if (hasSprint) add(R.string.sprint_tab)
+                        if (hasQuali) add(R.string.qualifying_tab)
+                    }
                     Column {
-                        if (hasSprint) {
-                            TabRow(selectedTabIndex = tab) {
-                                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.race_tab)) })
-                                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.sprint_tab)) })
+                        TabRow(selectedTabIndex = tab.coerceAtMost(tabs.lastIndex)) {
+                            tabs.forEachIndexed { i, label ->
+                                Tab(
+                                    selected = tab == i,
+                                    onClick = { tab = i },
+                                    text = { Text(stringResource(label)) }
+                                )
                             }
                         }
-                        val results = if (!hasSprint || tab == 0) state.data.results else state.data.sprint
-                        if (results.isEmpty()) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(stringResource(R.string.no_results_yet))
-                            }
-                        } else {
-                            LazyColumn(
-                                contentPadding = PaddingValues(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                item {
-                                    Text(
-                                        text = "${state.data.race.raceName} — ${formatRaceDate(state.data.race.date)}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.padding(bottom = 4.dp)
-                                    )
-                                }
-                                items(results, key = { "${it.Driver.driverId}-${it.position}" }) { r ->
-                                    ResultRow(r)
-                                }
-                            }
+                        val currentTab = tab.coerceAtMost(tabs.lastIndex)
+                        when (tabs[currentTab]) {
+                            R.string.race_tab -> ResultsList(state.data.race, state.data.results)
+                            R.string.sprint_tab -> ResultsList(state.data.race, state.data.sprint)
+                            else -> QualifyingList(state.data.race, state.data.qualifying)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultsList(race: com.f1live.app.data.model.Race, results: List<Result>) {
+    if (results.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_results_yet))
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            item {
+                Text(
+                    text = "${race.raceName} — ${formatRaceDate(race.date)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+            items(results, key = { "${it.Driver.driverId}-${it.position}" }) { r ->
+                ResultRow(r)
+            }
+        }
+    }
+}
+
+@Composable
+private fun QualifyingList(race: com.f1live.app.data.model.Race, qualifying: List<com.f1live.app.data.model.QualifyingResult>) {
+    if (qualifying.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_results_yet))
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            item {
+                Text(
+                    text = "${race.raceName} — ${formatRaceDate(race.date)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+            items(qualifying, key = { "${it.Driver.driverId}-${it.position}" }) { q ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = q.position,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(30.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(teamColor(q.Constructor.constructorId))
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "${q.Driver.givenName} ${q.Driver.familyName}".uppercase(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = q.Constructor.name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        q.bestTime?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }

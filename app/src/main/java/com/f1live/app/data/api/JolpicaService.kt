@@ -38,6 +38,12 @@ interface JolpicaService {
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
     ): Envelope<SprintData>
+
+    @GET("ergast/f1/current/{round}/qualifying.json")
+    suspend fun qualifyingResults(
+        @Path("round") round: String,
+        @Query("limit") limit: Int = 100
+    ): Envelope<RacesData>
 }
 
 object ApiClient {
