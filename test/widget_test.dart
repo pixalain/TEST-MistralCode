@@ -46,7 +46,10 @@ void main() {
     await tester.enterText(find.byType(TextField), 'F40');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ferrari F40'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    tester.takeException();
+    await tester.pump();
     expect(find.text('Caractéristiques'), findsOneWidget);
     expect(find.text('478 ch'), findsOneWidget);
     expect(find.text('V8 2,9 L biturbo'), findsOneWidget);
