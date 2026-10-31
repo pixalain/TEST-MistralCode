@@ -38,8 +38,8 @@ public:
     juce::AudioProcessorValueTreeState parameters;
 
 private:
-    juce::dsp::Reverb reverb;
-    juce::dsp::Reverb::Parameters reverbParams;
+    juce::Reverb reverb;
+    juce::Reverb::Parameters reverbParams;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MonPremierVSTAudioProcessor)
 };

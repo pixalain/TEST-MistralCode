@@ -92,26 +92,25 @@ void MonPremierVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     const int numSamples  = buffer.getNumSamples();
     const int numChannels = buffer.getNumChannels();
 
-    juce::AudioBuffer<float> wetBuffer (numChannels, numSamples);
-    wetBuffer.makeCopyOf (buffer);
+    float* channels[2] = { nullptr, nullptr };
 
+    if (numChannels == 1)
     {
-        juce::dsp::AudioBlock<float> wetBlock (wetBuffer);
-        juce::dsp::ProcessContextReplacing<float> wetContext (wetBlock);
-        reverb.process (wetContext);
+        channels[0] = buffer.getWritePointer (0);
+        reverb.processMono (channels[0], numSamples);
+    }
+    else
+    {
+        channels[0] = buffer.getWritePointer (0);
+        channels[1] = buffer.getWritePointer (1);
+        reverb.processStereo (channels[0], channels[1], numSamples);
     }
 
-    const float dryGain = gain * (1.0f - mix);
-    const float wetGain = gain * mix;
+    reverbParams.wetLevel = mix;
+    reverbParams.dryLevel = 1.0f - mix;
+    reverb.setParameters (reverbParams);
 
-    for (int ch = 0; ch < numChannels; ++ch)
-    {
-        auto* dry = buffer.getWritePointer (ch);
-        auto* wet = wetBuffer.getReadPointer (ch);
-
-        for (int i = 0; i < numSamples; ++i)
-            dry[i] = dry[i] * dryGain + wet[i] * wetGain;
-    }
+    buffer.applyGain (gain);
 }
 
 bool MonPremierVSTAudioProcessor::hasEditor() const { return true; }
