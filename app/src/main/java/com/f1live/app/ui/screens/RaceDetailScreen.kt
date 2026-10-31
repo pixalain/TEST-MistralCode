@@ -107,7 +107,7 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
             s.code
         )
     }
-    val tabs = if (alphaTabs.isNotEmpty()) alphaTabs else legacyTabs
+    val tabs = if (detail.alphaSessions.isNotEmpty()) alphaTabs else legacyTabs
 
     val initialIndex = remember(tabs.size, initialTab) {
         if (initialTab.isBlank()) 0
@@ -176,7 +176,17 @@ private fun ResultsList(race: com.f1live.app.data.model.Race, results: List<Resu
 private fun AlphaResultsList(race: com.f1live.app.data.model.Race, session: SessionResults) {
     if (session.rows.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.no_results_yet))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.no_results_yet),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "${race.raceName} — ${session.title}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     } else {
         LazyColumn(

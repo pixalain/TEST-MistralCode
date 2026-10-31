@@ -112,8 +112,11 @@ class F1Repository(
                 "R" to "Race"
             )
             codes.map { (code, title) ->
-                async { fetchAlphaSession(roundId, code, title) }
-            }.awaitAll().filterNotNull()
+                async {
+                    fetchAlphaSession(roundId, code, title)
+                        ?: SessionResults(code, title, null, emptyList())
+                }
+            }.awaitAll()
         }
 
         RaceDetail(
