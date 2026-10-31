@@ -40,16 +40,17 @@ jobs:
         with:
           name: ferrari-history-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 365
 
-      - name: Créer la release GitHub avec l'APK (branche main)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Créer/mettre à jour la release GitHub avec l'APK (toutes branches)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: Ferrari History v${{ github.run_number }} — Android
+          tag_name: app-latest
+          name: Ferrari History — dernière build (APK Android + iOS)
           files: build/app/outputs/flutter-apk/app-release.apk
           draft: false
           make_latest: true
+          update_release: true
 
   ios:
     name: iOS (build sans signature)
@@ -84,3 +85,14 @@ jobs:
         with:
           name: ferrari-history-ios-app
           path: build/ferrari-history-ios-simulator.zip
+          retention-days: 365
+
+      - name: Ajouter le build iOS à la release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-latest
+          name: Ferrari History — dernière build (APK Android + iOS)
+          files: build/ferrari-history-ios-simulator.zip
+          draft: false
+          make_latest: true
+          update_release: true
