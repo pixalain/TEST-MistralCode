@@ -11,7 +11,25 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         juce::ParameterID { "gain", 1 },
         "Gain",
         juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.5f));
+        0.8f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbMix", 1 },
+        "Reverb Mix",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.25f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbRoom", 1 },
+        "Room Size",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.6f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "reverbDamping", 1 },
+        "Damping",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.4f));
 
     return { params.begin(), params.end() };
 }
@@ -32,7 +50,7 @@ const juce::String MonPremierVSTAudioProcessor::getName() const { return "MonPre
 bool MonPremierVSTAudioProcessor::acceptsMidi() const   { return false; }
 bool MonPremierVSTAudioProcessor::producesMidi() const  { return false; }
 bool MonPremierVSTAudioProcessor::isMidiEffect() const  { return false; }
-double MonPremierVSTAudioProcessor::getTailLengthSeconds() const { return 0.0; }
+double MonPremierVSTAudioProcessor::getTailLengthSeconds() const { return 3.0; }
 
 int MonPremierVSTAudioProcessor::getNumPrograms()   { return 1; }
 int MonPremierVSTAudioProcessor::getCurrentProgram() { return 0; }
@@ -40,8 +58,17 @@ void MonPremierVSTAudioProcessor::setCurrentProgram (int) {}
 const juce::String MonPremierVSTAudioProcessor::getProgramName (int) { return {}; }
 void MonPremierVSTAudioProcessor::changeProgramName (int, const juce::String&) {}
 
-void MonPremierVSTAudioProcessor::prepareToPlay (double, int) {}
-void MonPremierVSTAudioProcessor::releaseResources() {}
+void MonPremierVSTAudioProcessor::prepareToPlay (double sampleRate, int)
+{
+    reverb.setSampleRate (sampleRate);
+    reverbParams.roomSize = 0.6f;
+    reverbParams.damping  = 0.4f;
+    reverbParams.wetLevel = 1.0f;
+    reverbParams.dryLevel = 1.0f;
+    reverbParams.width    = 1.0f;
+    reverb.setParameters (reverbParams);
+}
+void MonPremierVSTAudioProcessor::releaseResources() { reverb.reset(); }
 
 bool MonPremierVSTAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
@@ -53,9 +80,38 @@ void MonPremierVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
 {
     juce::ScopedNoDenormals noDenormals;
 
-    const auto gain = parameters.getRawParameterValue ("gain")->load();
+    const auto gain    = parameters.getRawParameterValue ("gain")->load();
+    const auto mix     = parameters.getRawParameterValue ("reverbMix")->load();
+    const auto room    = parameters.getRawParameterValue ("reverbRoom")->load();
+    const auto damping = parameters.getRawParameterValue ("reverbDamping")->load();
 
-    buffer.applyGain (gain);
+    reverbParams.roomSize = room;
+    reverbParams.damping  = damping;
+    reverb.setParameters (reverbParams);
+
+    const int numSamples  = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels();
+
+    juce::AudioBuffer<float> wetBuffer (numChannels, numSamples);
+    wetBuffer.makeCopyOf (buffer);
+
+    {
+        juce::dsp::AudioBlock<float> wetBlock (wetBuffer);
+        juce::dsp::ProcessContextReplacing<float> wetContext (wetBlock);
+        reverb.process (wetContext);
+    }
+
+    const float dryGain = gain * (1.0f - mix);
+    const float wetGain = gain * mix;
+
+    for (int ch = 0; ch < numChannels; ++ch)
+    {
+        auto* dry = buffer.getWritePointer (ch);
+        auto* wet = wetBuffer.getReadPointer (ch);
+
+        for (int i = 0; i < numSamples; ++i)
+            dry[i] = dry[i] * dryGain + wet[i] * wetGain;
+    }
 }
 
 bool MonPremierVSTAudioProcessor::hasEditor() const { return true; }

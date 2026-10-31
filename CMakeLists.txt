@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MonPremierVST VERSION 0.1.0 LANGUAGES C CXX)
+project(MonPremierVST VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,6 +40,7 @@ target_link_libraries(MonPremierVST PRIVATE
     juce::juce_audio_processors
     juce::juce_audio_utils
     juce::juce_audio_devices
+    juce::juce_dsp
     juce::juce_gui_extra
     juce::juce_recommended_config_flags
     juce::juce_recommended_warning_flags

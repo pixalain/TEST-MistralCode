@@ -1,7 +1,7 @@
 ; Installeur NSIS pour MonPremierVST (VST3, 64 bits)
 
 !define PLUGIN_NAME "MonPremierVST"
-!define VERSION "0.1.0"
+!define VERSION "0.2.0"
 !define PUBLISHER "Pixalain"
 
 Name "${PLUGIN_NAME} v${VERSION}"

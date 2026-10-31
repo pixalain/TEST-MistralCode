@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $src = "build/MonPremierVST_artefacts/Release/VST3/MonPremierVST.vst3"
-          Compress-Archive -Path $src -DestinationPath "MonPremierVST-Windows-v0.1.0.zip" -Force
+          Compress-Archive -Path $src -DestinationPath "MonPremierVST-Windows-v0.2.0.zip" -Force
 
       - name: Install NSIS
         run: choco install nsis -y
@@ -37,17 +37,17 @@ jobs:
         with:
           name: MonPremierVST-Windows
           path: |
-            MonPremierVST-Windows-v0.1.0.zip
-            MonPremierVST-Setup-v0.1.0.exe
+            MonPremierVST-Windows-v0.2.0.zip
+            MonPremierVST-Setup-v0.2.0.exe
 
       - name: Create GitHub Release with binaries
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0
-          name: MonPremierVST v0.1.0
+          tag_name: v0.2.0
+          name: MonPremierVST v0.2.0
           files: |
-            MonPremierVST-Windows-v0.1.0.zip
-            MonPremierVST-Setup-v0.1.0.exe
+            MonPremierVST-Windows-v0.2.0.zip
+            MonPremierVST-Setup-v0.2.0.exe
           draft: false
           prerelease: false

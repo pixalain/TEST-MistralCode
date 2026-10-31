@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_dsp/juce_dsp.h>
 
 class MonPremierVSTAudioProcessor final : public juce::AudioProcessor
 {
@@ -37,5 +38,8 @@ public:
     juce::AudioProcessorValueTreeState parameters;
 
 private:
+    juce::dsp::Reverb reverb;
+    juce::dsp::Reverb::Parameters reverbParams;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MonPremierVSTAudioProcessor)
 };
