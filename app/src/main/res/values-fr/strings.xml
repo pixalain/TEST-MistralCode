@@ -22,6 +22,9 @@
     <string name="qualifying_tab">Qualifs</string>
     <string name="no_results_yet">Résultats pas encore disponibles pour ce Grand Prix.</string>
     <string name="next_race_sessions">Prochain GP : %1$s — programme des séances</string>
+    <string name="sessions_in_progress">GP en cours : %1$s — séances</string>
+    <string name="last_sessions">Dernières séances : %1$s</string>
+    <string name="session_in_progress">En cours</string>
     <string name="session_fp1">Essais libres 1</string>
     <string name="session_fp2">Essais libres 2</string>
     <string name="session_fp3">Essais libres 3</string>

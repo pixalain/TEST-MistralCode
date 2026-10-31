@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ import com.f1live.app.ui.RacesUi
 import com.f1live.app.ui.UiState
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -53,12 +55,15 @@ data class SessionInfo(
     val isRace: Boolean = false
 )
 
-fun raceSessions(race: Race): List<SessionInfo> = listOf(
-    SessionInfo("fp1", R.string.session_fp1, race.firstPractice),
-    SessionInfo("fp2", R.string.session_fp2, race.secondPractice),
-    SessionInfo("fp3", R.string.session_fp3, race.thirdPractice),
-    SessionInfo("sprint", R.string.session_sprint, race.Sprint),
-    SessionInfo("quali", R.string.session_qualifying, race.Qualifying),
+fun raceSessions(race: Race): List<SessionInfo> = listOfNotNull(
+    race.firstPractice?.let { SessionInfo("fp1", R.string.session_fp1, it) },
+    race.secondPractice?.let { SessionInfo("fp2", R.string.session_fp2, it) },
+    race.thirdPractice?.let { SessionInfo("fp3", R.string.session_fp3, it) },
+    (race.sprintQualifying ?: race.sprintShootout)?.let {
+        SessionInfo("sq", R.string.session_sprint_qualifying, it)
+    },
+    race.Sprint?.let { SessionInfo("sprint", R.string.session_sprint, it) },
+    race.Qualifying?.let { SessionInfo("quali", R.string.session_qualifying, it) },
     SessionInfo("race", R.string.session_race, Session(race.date, race.time), isRace = true)
 )
 
@@ -66,8 +71,8 @@ fun sessionDateTime(s: Session?): LocalDateTime? = try {
     if (s == null) null
     else LocalDateTime.of(
         LocalDate.parse(s.date),
-        java.time.LocalTime.parse(s.time ?: "00:00:00Z".removeSuffix("Z"))
-    ).atOffset(ZoneOffset.UTC).toLocalDateTime()
+        LocalTime.parse((s.time ?: "00:00:00").removeSuffix("Z"))
+    )
 } catch (e: Exception) {
     null
 }
@@ -80,14 +85,34 @@ fun formatSessionWhen(s: Session): String {
     return "${local.format(dateFmt)} · ${local.format(timeFmt)}"
 }
 
-fun findNextRace(races: List<Race>): Race? {
+enum class SessionStatus { NOT_SCHEDULED, UPCOMING, IN_PROGRESS, DONE }
+
+fun sessionStatus(info: SessionInfo, now: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): SessionStatus {
+    val start = sessionDateTime(info.session) ?: return SessionStatus.NOT_SCHEDULED
+    val durationHours = if (info.isRace) 3 else 1
+    return when {
+        now.isBefore(start) -> SessionStatus.UPCOMING
+        now.isBefore(start.plusHours(durationHours.toLong())) -> SessionStatus.IN_PROGRESS
+        else -> SessionStatus.DONE
+    }
+}
+
+/**
+ * The race whose weekend is currently running, or the most recent one.
+ */
+fun findCurrentOrLastRace(races: List<Race>): Race? {
     val now = LocalDateTime.now(ZoneOffset.UTC)
-    return races
-        .sortedBy { it.date }
-        .firstOrNull { race ->
-            val end = sessionDateTime(Session(race.date, race.time))?.plusHours(4) ?: LocalDateTime.MAX
-            end.isAfter(now)
-        }
+    val sorted = races.sortedBy { it.date }
+    val current = sorted.firstOrNull { race ->
+        val start = sessionDateTime(race.firstPractice ?: Session(race.date, race.time))
+        val end = sessionDateTime(Session(race.date, race.time))?.plusHours(4)
+        start != null && end != null && !now.isBefore(start) && now.isBefore(end)
+    }
+    if (current != null) return current
+    return sorted.lastOrNull { race ->
+        val end = sessionDateTime(Session(race.date, race.time))?.plusHours(4) ?: return@lastOrNull false
+        !now.isBefore(end)
+    } ?: sorted.lastOrNull()
 }
 
 @Composable
@@ -100,32 +125,42 @@ fun SessionsScreen(
         is UiState.Loading -> LoadingBox()
         is UiState.Error -> ErrorBox(state.message, onRefresh)
         is UiState.Success -> {
-            val next = findNextRace(state.data.races)
-            if (next == null) {
+            val race = findCurrentOrLastRace(state.data.races)
+            if (race == null) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.all_sessions_done))
                 }
                 return
             }
+            val now = LocalDateTime.now(ZoneOffset.UTC)
+            val sessions = raceSessions(race)
+            val anyInProgress = sessions.any { sessionStatus(it, now) == SessionStatus.IN_PROGRESS }
             LazyColumn(
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
                     Text(
-                        text = stringResource(R.string.next_race_sessions, next.raceName),
+                        text = stringResource(
+                            if (anyInProgress) R.string.sessions_in_progress else R.string.last_sessions,
+                            race.raceName
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        modifier = Modifier.padding(bottom = 2.dp)
                     )
                     Text(
-                        text = "${next.circuitName} — ${next.locality}, ${next.country} · ${formatRaceDate(next.date)}",
+                        text = "${race.circuitName} — ${race.locality}, ${race.country} · ${formatRaceDate(race.date)}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
-                items(raceSessions(next), key = { it.key }) { info ->
-                    SessionCard(info = info, onClick = { onRaceClick(next) })
+                items(sessions, key = { it.key }) { info ->
+                    SessionCard(
+                        info = info,
+                        status = sessionStatus(info, now),
+                        onClick = { onRaceClick(race) }
+                    )
                 }
             }
         }
@@ -133,11 +168,13 @@ fun SessionsScreen(
 }
 
 @Composable
-private fun SessionCard(info: SessionInfo, onClick: () -> Unit) {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val when_ = sessionDateTime(info.session)
-    val done = when_ != null && when_.plusHours(if (info.isRace) 4 else 2).isBefore(now)
-    val scheduled = info.session != null
+private fun SessionCard(info: SessionInfo, status: SessionStatus, onClick: () -> Unit) {
+    val (icon, tint, labelRes) = when (status) {
+        SessionStatus.IN_PROGRESS -> Triple(Icons.Default.Timer, MaterialTheme.colorScheme.primary, R.string.session_in_progress)
+        SessionStatus.DONE -> Triple(Icons.Default.CheckCircle, Color(0xFF2E7D32), R.string.session_done)
+        SessionStatus.UPCOMING -> Triple(Icons.Default.Schedule, MaterialTheme.colorScheme.onSurfaceVariant, R.string.session_upcoming)
+        SessionStatus.NOT_SCHEDULED -> Triple(Icons.Default.RadioButtonUnchecked, MaterialTheme.colorScheme.onSurfaceVariant, R.string.session_not_scheduled)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -149,25 +186,19 @@ private fun SessionCard(info: SessionInfo, onClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val icon: ImageVector
-            val tint: Color
-            when {
-                info.isRace -> { icon = Icons.Default.Flag; tint = MaterialTheme.colorScheme.primary }
-                done -> { icon = Icons.Default.CheckCircle; tint = Color(0xFF2E7D32) }
-                scheduled -> { icon = Icons.Default.Schedule; tint = MaterialTheme.colorScheme.onSurfaceVariant }
-                else -> { icon = Icons.Default.RadioButtonUnchecked; tint = MaterialTheme.colorScheme.onSurfaceVariant }
-            }
+            val badgeIcon: ImageVector = if (info.isRace) Icons.Default.Flag else icon
+            val badgeTint: Color = if (info.isRace) MaterialTheme.colorScheme.primary else tint
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(tint.copy(alpha = 0.12f)),
+                    .background(badgeTint.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = badgeIcon,
                     contentDescription = null,
-                    tint = tint,
+                    tint = badgeTint,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -179,21 +210,19 @@ private fun SessionCard(info: SessionInfo, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = if (scheduled) formatSessionWhen(info.session!!)
+                    text = if (info.session != null) formatSessionWhen(info.session)
                            else stringResource(R.string.session_not_scheduled),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                if (scheduled) {
-                    Text(
-                        text = stringResource(if (done) R.string.session_done else R.string.session_upcoming),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (done) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
-                    )
-                }
-                if (done && info.isRace) {
+                Text(
+                    text = stringResource(labelRes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = tint
+                )
+                if (status == SessionStatus.DONE) {
                     Text(
                         text = stringResource(R.string.view_results),
                         style = MaterialTheme.typography.labelLarge,

@@ -90,6 +90,8 @@ data class Race(
     @SerialName("FirstPractice") val firstPractice: Session? = null,
     @SerialName("SecondPractice") val secondPractice: Session? = null,
     @SerialName("ThirdPractice") val thirdPractice: Session? = null,
+    @SerialName("SprintShootout") val sprintShootout: Session? = null,
+    @SerialName("SprintQualifying") val sprintQualifying: Session? = null,
     val Qualifying: Session? = null,
     val Sprint: Session? = null,
     val Results: List<Result>? = null,

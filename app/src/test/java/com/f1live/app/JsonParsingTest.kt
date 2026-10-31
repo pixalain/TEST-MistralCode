@@ -4,11 +4,22 @@ import com.f1live.app.data.model.AlphaEnvelope
 import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
+import com.f1live.app.data.model.Circuit
+import com.f1live.app.data.model.Location
+import com.f1live.app.data.model.Race
 import com.f1live.app.data.model.RacesData
+import com.f1live.app.data.model.Session
+import com.f1live.app.ui.screens.SessionInfo
+import com.f1live.app.ui.screens.SessionStatus
+import com.f1live.app.ui.screens.findCurrentOrLastRace
+import com.f1live.app.ui.screens.sessionDateTime
+import com.f1live.app.ui.screens.sessionStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDateTime
 
 class JsonParsingTest {
 
@@ -63,6 +74,36 @@ class JsonParsingTest {
         assertEquals("1:31.666", row.time)
         assertEquals("1", row.displayPosition)
         assertEquals("#00D7B6", row.team?.primary_color)
+    }
+
+    @Test
+    fun sessionStatusTransitions() {
+        val fp = SessionInfo("fp1", 0, Session("2026-10-30", "18:30:00Z"))
+        val atStart = LocalDateTime.of(2026, 10, 30, 18, 30, 0)
+        assertEquals(SessionStatus.IN_PROGRESS, sessionStatus(fp, atStart.plusMinutes(15)))
+        assertEquals(SessionStatus.UPCOMING, sessionStatus(fp, atStart.minusHours(2)))
+        assertEquals(SessionStatus.DONE, sessionStatus(fp, atStart.plusHours(2)))
+        assertEquals(SessionStatus.NOT_SCHEDULED, sessionStatus(SessionInfo("x", 0, null), atStart))
+    }
+
+    @Test
+    fun sessionDateTimeParsesUtc() {
+        val dt = sessionDateTime(Session("2026-10-30", "18:30:00Z"))
+        assertNotNull(dt)
+        assertEquals(LocalDateTime.of(2026, 10, 30, 18, 30), dt)
+    }
+
+    @Test
+    fun currentOrLastRaceFallsBackToMostRecent() {
+        fun mk(round: String, date: String) = Race(
+            season = "2026", round = round, raceName = "GP$round",
+            Circuit = Circuit("c", "Circuit", Location("City", "Country")),
+            date = date, time = "14:00:00Z",
+            firstPractice = Session(date, "10:00:00Z")
+        )
+        val races = listOf(mk("18", "2026-10-25"), mk("19", "2026-11-01"))
+        val r = findCurrentOrLastRace(races)
+        assertNotNull(r)
     }
 
     @Test
