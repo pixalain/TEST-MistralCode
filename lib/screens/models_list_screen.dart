@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../data/ferrari_models.dart';
-import '../main.dart';
 import '../models/car_model.dart';
 import 'car_detail_screen.dart';
 
