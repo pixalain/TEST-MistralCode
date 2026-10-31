@@ -3,18 +3,13 @@ name: Build Android & iOS
 on:
   push:
     branches: [main, 'vibe/**']
-  pull_request:
-    types: [opened, synchronize]
-    paths-ignore:
-      - '.github/workflows/build-apps.yml'
   workflow_dispatch:
 
 jobs:
   android:
     name: Android (APK)
     runs-on: ubuntu-latest
-    # Le build Android (APK) est le livrable principal : on le lance aussi sur les PR
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
