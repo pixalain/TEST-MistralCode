@@ -79,6 +79,15 @@ static Layout createParameterLayout()
     return layout;
 }
 
+static float param (const juce::AudioProcessorValueTreeState& apvts, const char* id)
+{
+    return apvts.getRawParameterValue (id)->load();
+}
+static bool paramBool (const juce::AudioProcessorValueTreeState& apvts, const char* id)
+{
+    return apvts.getRawParameterValue (id)->load() > 0.5f;
+}
+
 TheDGVSTAudioProcessor::TheDGVSTAudioProcessor()
     : AudioProcessor (BusesProperties()
           .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
@@ -95,11 +104,166 @@ bool TheDGVSTAudioProcessor::producesMidi() const { return false; }
 bool TheDGVSTAudioProcessor::isMidiEffect() const { return false; }
 double TheDGVSTAudioProcessor::getTailLengthSeconds() const { return 3.0; }
 
-int TheDGVSTAudioProcessor::getNumPrograms() { return 1; }
-int TheDGVSTAudioProcessor::getCurrentProgram() { return 0; }
-void TheDGVSTAudioProcessor::setCurrentProgram (int) {}
-const juce::String TheDGVSTAudioProcessor::getProgramName (int) { return "Default"; }
-void TheDGVSTAudioProcessor::changeProgramName (int, const juce::String&) {}
+int TheDGVSTAudioProcessor::getNumPrograms()
+{
+    return (int) dg::factoryPresets().size() + (int) userPresets.size();
+}
+
+int TheDGVSTAudioProcessor::getNumFactoryPresets() const
+{
+    return (int) dg::factoryPresets().size();
+}
+
+int TheDGVSTAudioProcessor::getCurrentProgram()
+{
+    return currentProgram.load();
+}
+
+void TheDGVSTAudioProcessor::setCurrentProgram (int index)
+{
+    const int nFactory = (int) dg::factoryPresets().size();
+    if (index >= 0 && index < nFactory)
+        loadFactoryPreset (index);
+    else if (index >= nFactory && index < getNumPrograms())
+        loadUserPreset (index - nFactory);
+}
+
+const juce::String TheDGVSTAudioProcessor::getProgramName (int index)
+{
+    const int nFactory = (int) dg::factoryPresets().size();
+    if (index >= 0 && index < nFactory)
+        return dg::factoryPresets()[(size_t) index].name;
+    if (index >= nFactory && index < getNumPrograms())
+        return userPresets[(size_t) (index - nFactory)];
+    return {};
+}
+
+void TheDGVSTAudioProcessor::changeProgramName (int index, const juce::String& newName)
+{
+    const int nFactory = (int) dg::factoryPresets().size();
+    if (index >= nFactory && index < getNumPrograms() && newName.isNotEmpty())
+        userPresets[(size_t) (index - nFactory)] = newName;
+}
+
+void TheDGVSTAudioProcessor::loadFactoryPreset (int index)
+{
+    if (index < 0 || index >= (int) dg::factoryPresets().size())
+        return;
+    applyChainParamsToParameters (dg::factoryPresets()[(size_t) index].params);
+    currentProgram = index;
+    updateChainFromParameters();
+}
+
+void TheDGVSTAudioProcessor::loadUserPreset (int index)
+{
+    if (index < 0 || index >= (int) userPresetStates.size())
+        return;
+    apvts.replaceState (userPresetStates[(size_t) index]);
+    currentProgram = (int) dg::factoryPresets().size() + index;
+    updateChainFromParameters();
+}
+
+juce::String TheDGVSTAudioProcessor::getUserPresetName (int index) const
+{
+    if (index >= 0 && index < (int) userPresets.size())
+        return userPresets[(size_t) index];
+    return {};
+}
+
+void TheDGVSTAudioProcessor::saveCurrentAsUserPreset (const juce::String& name)
+{
+    auto state = apvts.copyState();
+    state.setProperty ("presetName", name, nullptr);
+    userPresets.push_back (name);
+    userPresetStates.push_back (state);
+    currentProgram = (int) dg::factoryPresets().size() + (int) userPresets.size() - 1;
+}
+
+void TheDGVSTAudioProcessor::deleteUserPreset (int index)
+{
+    if (index < 0 || index >= (int) userPresets.size())
+        return;
+    userPresets.erase (userPresets.begin() + index);
+    userPresetStates.erase (userPresetStates.begin() + index);
+}
+
+juce::StringArray TheDGVSTAudioProcessor::getAllPresetNames() const
+{
+    juce::StringArray names;
+    for (const auto& p : dg::factoryPresets())
+        names.add (p.name);
+    for (const auto& n : userPresets)
+        names.add (n);
+    return names;
+}
+
+void TheDGVSTAudioProcessor::applyChainParamsToParameters (const dg::ChainParams& p)
+{
+    auto set = [this] (const char* id, float v)
+    {
+        if (auto* param = apvts.getParameter (id))
+            param->setValueNotifyingHost (param->convertTo0to1 (v));
+    };
+    set ("wahOn",     p.wahOn ? 1.0f : 0.0f);
+    set ("wahPedal",  p.wahPedal);
+    set ("compOn",    p.compOn ? 1.0f : 0.0f);
+    set ("compSustain", p.compSustain);
+    set ("compLevel",   p.compLevel);
+    set ("fuzzOn",    p.fuzzOn ? 1.0f : 0.0f);
+    set ("fuzzMode",  (float) p.fuzzMode);
+    set ("fuzzDrive", p.fuzzDrive);
+    set ("fuzzTone",  p.fuzzTone);
+    set ("fuzzVol",   p.fuzzVol);
+    set ("octaveOn",  p.octaveOn ? 1.0f : 0.0f);
+    set ("octUp",     p.octUp);
+    set ("octSub",    p.octSub);
+    set ("vibeOn",    p.vibeOn ? 1.0f : 0.0f);
+    set ("vibeRate",  p.vibeRate);
+    set ("vibeDepth", p.vibeDepth);
+    set ("vibeMix",   p.vibeMix);
+    set ("phaserOn",  p.phaserOn ? 1.0f : 0.0f);
+    set ("phRate",    p.phRate);
+    set ("phDepth",   p.phDepth);
+    set ("phMix",     p.phMix);
+    set ("flangerOn", p.flangerOn ? 1.0f : 0.0f);
+    set ("flRate",    p.flRate);
+    set ("flDepth",   p.flDepth);
+    set ("flRegen",   p.flRegen);
+    set ("flMix",     p.flMix);
+    set ("chorusOn",  p.chorusOn ? 1.0f : 0.0f);
+    set ("chRate",    p.chRate);
+    set ("chDepth",   p.chDepth);
+    set ("chMix",     p.chMix);
+    set ("tremOn",    p.tremOn ? 1.0f : 0.0f);
+    set ("trRate",    p.trRate);
+    set ("trDepth",   p.trDepth);
+    set ("delayOn",   p.delayOn ? 1.0f : 0.0f);
+    set ("delayTime", p.delayTime);
+    set ("delayFb",   p.delayFb);
+    set ("delayMix",  p.delayMix);
+    set ("reverbOn",  p.reverbOn ? 1.0f : 0.0f);
+    set ("revMix",    p.revMix);
+    set ("revSize",   p.revSize);
+    set ("revDecay",  p.revDecay);
+    set ("master",    p.master);
+}
+
+void TheDGVSTAudioProcessor::readParametersInto (dg::ChainParams& p) const
+{
+    p.wahOn = paramBool (apvts, "wahOn"); p.wahPedal = param (apvts, "wahPedal");
+    p.compOn = paramBool (apvts, "compOn"); p.compSustain = param (apvts, "compSustain"); p.compLevel = param (apvts, "compLevel");
+    p.fuzzOn = paramBool (apvts, "fuzzOn"); p.fuzzMode = (int) param (apvts, "fuzzMode");
+    p.fuzzDrive = param (apvts, "fuzzDrive"); p.fuzzTone = param (apvts, "fuzzTone"); p.fuzzVol = param (apvts, "fuzzVol");
+    p.octaveOn = paramBool (apvts, "octaveOn"); p.octUp = param (apvts, "octUp"); p.octSub = param (apvts, "octSub");
+    p.vibeOn = paramBool (apvts, "vibeOn"); p.vibeRate = param (apvts, "vibeRate"); p.vibeDepth = param (apvts, "vibeDepth"); p.vibeMix = param (apvts, "vibeMix");
+    p.phaserOn = paramBool (apvts, "phaserOn"); p.phRate = param (apvts, "phRate"); p.phDepth = param (apvts, "phDepth"); p.phMix = param (apvts, "phMix");
+    p.flangerOn = paramBool (apvts, "flangerOn"); p.flRate = param (apvts, "flRate"); p.flDepth = param (apvts, "flDepth"); p.flRegen = param (apvts, "flRegen"); p.flMix = param (apvts, "flMix");
+    p.chorusOn = paramBool (apvts, "chorusOn"); p.chRate = param (apvts, "chRate"); p.chDepth = param (apvts, "chDepth"); p.chMix = param (apvts, "chMix");
+    p.tremOn = paramBool (apvts, "tremOn"); p.trRate = param (apvts, "trRate"); p.trDepth = param (apvts, "trDepth");
+    p.delayOn = paramBool (apvts, "delayOn"); p.delayTime = param (apvts, "delayTime"); p.delayFb = param (apvts, "delayFb"); p.delayMix = param (apvts, "delayMix");
+    p.reverbOn = paramBool (apvts, "reverbOn"); p.revMix = param (apvts, "revMix"); p.revSize = param (apvts, "revSize"); p.revDecay = param (apvts, "revDecay");
+    p.master = param (apvts, "master");
+}
 
 void TheDGVSTAudioProcessor::prepareToPlay (double sampleRate, int)
 {
@@ -120,15 +284,6 @@ bool TheDGVSTAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
         && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
     return layouts.getMainInputChannelSet() == layouts.getMainOutputChannelSet();
-}
-
-static float param (juce::AudioProcessorValueTreeState& apvts, const char* id)
-{
-    return apvts.getRawParameterValue (id)->load();
-}
-static bool paramBool (juce::AudioProcessorValueTreeState& apvts, const char* id)
-{
-    return apvts.getRawParameterValue (id)->load() > 0.5f;
 }
 
 void TheDGVSTAudioProcessor::updateChainFromParameters()
@@ -222,6 +377,17 @@ juce::AudioProcessorEditor* TheDGVSTAudioProcessor::createEditor()
 void TheDGVSTAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
+
+    auto userBank = juce::ValueTree ("UserPresets");
+    for (size_t i = 0; i < userPresetStates.size(); ++i)
+    {
+        auto copy = userPresetStates[i].createCopy();
+        copy.setProperty ("presetName", userPresets[i], nullptr);
+        userBank.addChild (copy, -1, nullptr);
+    }
+    state.addChild (userBank, -1, nullptr);
+    state.setProperty ("currentProgram", currentProgram.load(), nullptr);
+
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -229,7 +395,26 @@ void TheDGVSTAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 void TheDGVSTAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
-        apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    {
+        auto state = juce::ValueTree::fromXml (*xml);
+        auto bank = state.getChildWithName ("UserPresets");
+        if (bank.isValid())
+        {
+            userPresets.clear();
+            userPresetStates.clear();
+            for (int i = 0; i < bank.getNumChildren(); ++i)
+            {
+                auto child = bank.getChild (i);
+                userPresetStates.push_back (child);
+                userPresets.push_back (child.getProperty ("presetName").toString());
+            }
+            state.removeChild (bank, nullptr);
+        }
+        if (state.hasProperty ("currentProgram"))
+            currentProgram = (int) state.getProperty ("currentProgram");
+        state.removeProperty ("currentProgram", nullptr);
+        apvts.replaceState (state);
+    }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

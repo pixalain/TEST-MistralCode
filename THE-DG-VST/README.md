@@ -16,6 +16,23 @@ IN ──► WAH (Cry Baby) ──► COMP (MXR Dyna Comp / Boss CS-2) ──►
 Chaque étage est une pédale avec son **footswitch chrome + LED** et ses **potards chrome**.
 Le **wah** répond aussi au **MIDI CC1 (mod wheel)**.
 
+## Presets
+
+Le plugin embarque **14 presets d'usine inspires des morceaux phares de Pink Floyd**
+(reglages inspires des rigs documentes par morceau) :
+
+Comfortably Numb (Solo) - Echoes (Seagull Screams) - Time - Money -
+Shine On You Crazy Diamond - Wish You Were Here - Another Brick In The Wall (Pt.2) -
+Welcome To The Machine - Brain Damage - Mother - The Great Gig In The Sky -
+On The Run - Dogs - Hey You
+
+- **Dans l'editeur** : combo de presets + boutons chrome `<` `>` `SAVE` `DEL` en haut a droite.
+- **Depuis le DAW** : les programmes du plugin (host preset list) correspondent 1:1 aux presets
+  (usine d'abord, puis utilisateur).
+- **Presets utilisateur** : `SAVE` enregistre l'etat courant (nom demande), `DEL` supprime
+  un preset utilisateur (les presets d'usine sont proteges). Ils sont **serialises avec
+  l'etat du plugin** (session DAW / chunk VST3), donc ils suivent tes projets.
+
 ## Interface graphique
 
 - Fond **gris sombre anthracite** (dégradé + brossé subtil)

@@ -102,6 +102,11 @@ public:
 
 private:
     void timerCallback() override;
+    void refreshPresetList();
+    void onPresetSelected();
+    void onSavePreset();
+    void onDeletePreset();
+    void selectPreset (int itemId);
 
     TheDGVSTAudioProcessor& processorRef;
     ChromeLook chromeLook;
@@ -120,6 +125,13 @@ private:
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> fuzzModeAttachment;
     juce::ComboBox fuzzModeBox;
+
+    // preset manager (chrome buttons + combo)
+    juce::ComboBox presetBox;
+    juce::TextButton prevPresetButton { "<" };
+    juce::TextButton nextPresetButton { ">" };
+    juce::TextButton savePresetButton { "SAVE" };
+    juce::TextButton deletePresetButton { "DEL" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TheDGVSTAudioProcessorEditor)
 };

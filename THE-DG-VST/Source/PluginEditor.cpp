@@ -89,6 +89,26 @@ TheDGVSTAudioProcessorEditor::TheDGVSTAudioProcessorEditor (TheDGVSTAudioProcess
     reverbPanel.attach (processorRef.apvts, "reverbOn",
                         { { "revMix", "Mix" }, { "revSize", "Size" }, { "revDecay", "Decay" } });
 
+    // ---- preset manager (header, right side) ----
+    for (auto* b : { &prevPresetButton, &nextPresetButton, &savePresetButton, &deletePresetButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, ChromeLook::panelGrey());
+        b->setColour (juce::TextButton::textColourOnId, ChromeLook::textGrey());
+        b->setColour (juce::TextButton::textColourOffId, ChromeLook::textGrey());
+        addAndMakeVisible (*b);
+    }
+    prevPresetButton.onClick = [this] { selectPreset (presetBox.getSelectedId() - 2); };
+    nextPresetButton.onClick = [this] { selectPreset (presetBox.getSelectedId()); };
+    savePresetButton.onClick = [this] { onSavePreset(); };
+    deletePresetButton.onClick = [this] { onDeletePreset(); };
+
+    presetBox.setColour (juce::ComboBox::backgroundColourId, ChromeLook::panelGrey());
+    presetBox.setColour (juce::ComboBox::textColourId, ChromeLook::textGrey());
+    presetBox.setColour (juce::ComboBox::outlineColourId, juce::Colour (0xff888890));
+    presetBox.onChange = [this] { onPresetSelected(); };
+    addAndMakeVisible (presetBox);
+    refreshPresetList();
+
     // ---- master strip ----
     addAndMakeVisible (masterPanel);
     masterPanel.layoutPedal ({}, "MASTER", {});
@@ -132,7 +152,21 @@ void TheDGVSTAudioProcessorEditor::paint (juce::Graphics& g)
 void TheDGVSTAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds().reduced (10);
-    area.removeFromTop (64); // header
+
+    // header row: title on the left, preset manager on the right
+    auto header = area.removeFromTop (64);
+    titleLabel.setBounds (header.removeFromLeft (420).reduced (10, 6));
+    subtitleLabel.setBounds (header.removeFromTop (0)); // subtitle sits under title via paint layout below
+    subtitleLabel.setBounds (titleLabel.getX(), titleLabel.getBottom() + 2,
+                             titleLabel.getWidth(), 18);
+
+    auto presetArea = header.reduced (4);
+    const int btnW = 34;
+    deletePresetButton.setBounds (presetArea.removeFromRight (btnW).reduced (2));
+    savePresetButton.setBounds (presetArea.removeFromRight (52).reduced (2));
+    nextPresetButton.setBounds (presetArea.removeFromRight (btnW).reduced (2));
+    prevPresetButton.setBounds (presetArea.removeFromRight (btnW).reduced (2));
+    presetBox.setBounds (presetArea.reduced (2));
 
     auto pedalRow = area.removeFromTop (area.getHeight() - 8);
     pedalRow = pedalRow.reduced (2);
@@ -165,4 +199,72 @@ void TheDGVSTAudioProcessorEditor::timerCallback()
     wahPanel.repaint(); compPanel.repaint(); fuzzPanel.repaint(); octavePanel.repaint();
     vibePanel.repaint(); phaserPanel.repaint(); flangerPanel.repaint(); chorusPanel.repaint();
     tremPanel.repaint(); delayPanel.repaint(); reverbPanel.repaint();
+
+    // keep preset box in sync with host-driven program changes
+    const int prog = processorRef.getCurrentProgram();
+    if (presetBox.getSelectedId() != prog + 1)
+        presetBox.setSelectedId (prog + 1, juce::dontSendNotification);
+}
+
+void TheDGVSTAudioProcessorEditor::refreshPresetList()
+{
+    const int current = presetBox.getSelectedId();
+    presetBox.clear();
+    auto names = processorRef.getAllPresetNames();
+    for (int i = 0; i < names.size(); ++i)
+        presetBox.addItem (names[i], i + 1);
+    presetBox.setSelectedId (juce::jlimit (1, names.size(), current > 0 ? current : processorRef.getCurrentProgram() + 1),
+                             juce::dontSendNotification);
+}
+
+void TheDGVSTAudioProcessorEditor::selectPreset (int itemId) // itemId is 1-based combo id
+{
+    if (itemId < 1 || itemId > processorRef.getNumPrograms())
+        return;
+    processorRef.setCurrentProgram (itemId - 1);
+    presetBox.setSelectedId (itemId, juce::dontSendNotification);
+}
+
+void TheDGVSTAudioProcessorEditor::onPresetSelected()
+{
+    selectPreset (presetBox.getSelectedId());
+}
+
+void TheDGVSTAudioProcessorEditor::onSavePreset()
+{
+    // simple inline prompt via AlertWindow with an editable text field
+    auto* aw = new juce::AlertWindow ("Save preset", "Preset name:", juce::MessageBoxIconType::NoIcon);
+    aw->addTextEditor ("name", "My preset");
+    aw->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey));
+    aw->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    aw->enterModalState (true, juce::ModalCallbackFunction::create ([this, aw] (int result)
+    {
+        if (result == 1)
+        {
+            auto name = aw->getTextEditorContents ("name").trim();
+            if (name.isNotEmpty())
+            {
+                processorRef.saveCurrentAsUserPreset (name);
+                refreshPresetList();
+                presetBox.setSelectedId (processorRef.getCurrentProgram() + 1, juce::dontSendNotification);
+            }
+        }
+        delete aw;
+    }), true);
+}
+
+void TheDGVSTAudioProcessorEditor::onDeletePreset()
+{
+    const int prog = processorRef.getCurrentProgram();
+    const int nFactory = processorRef.getNumFactoryPresets();
+    if (prog < nFactory)
+    {
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon,
+            "Delete preset", "Factory presets (Pink Floyd songs) cannot be deleted.");
+        return;
+    }
+    processorRef.deleteUserPreset (prog - nFactory);
+    processorRef.setCurrentProgram (0);
+    refreshPresetList();
+    presetBox.setSelectedId (1, juce::dontSendNotification);
 }

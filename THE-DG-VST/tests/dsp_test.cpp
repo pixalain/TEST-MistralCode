@@ -1,6 +1,7 @@
 // Native unit test for the THE DG VST DSP core (no JUCE needed).
 // Run: ./dg_dsp_test   — exits non-zero on failure.
 #include "../Source/DspChain.h"
+#include "../Source/Presets.h"
 #include <cstdio>
 #include <cmath>
 #include <random>
@@ -161,6 +162,43 @@ int main()
         check (std::fabs (l[332]) > 0.1f, "dotted-eighth tap (0.75x) present at ~332 samples");
         // and the dry component must be absent when mix == 1
         check (std::fabs (l[0]) < 1e-3f, "delay mix=1 removes dry component at t=0");
+    }
+
+    // 6. Factory presets: each Pink Floyd preset must be finite and sound different
+    {
+        const auto& presets = dg::factoryPresets();
+        check (presets.size() >= 10, "at least 10 Pink Floyd factory presets defined");
+        for (const auto& fp : presets)
+        {
+            ChainParams p = fp.params;
+            p.master = 0.8f;
+            chain.update (p);
+            chain.reset();
+            std::vector<float> l = signal, r = signal;
+            chain.processBlock (l.data(), (int) l.size());
+            chain.processBlock (r.data(), (int) r.size());
+            bool ok = allFinite (l) && allFinite (r) && rms (l) > 1e-4f;
+            char name[160];
+            std::snprintf (name, sizeof (name), "preset '%s' produces finite, audible output", fp.name);
+            check (ok, name);
+        }
+        // presets must differ from each other (at least some do)
+        bool anyDiffer = false;
+        for (size_t i = 0; i + 1 < presets.size() && !anyDiffer; ++i)
+        {
+            auto a = presets[i].params, b = presets[i + 1].params;
+            a.master = b.master = 0.8f;
+            chain.update (a); chain.reset();
+            std::vector<float> la = signal;
+            chain.processBlock (la.data(), (int) la.size());
+            chain.update (b); chain.reset();
+            std::vector<float> lb = signal;
+            chain.processBlock (lb.data(), (int) lb.size());
+            float d = 0.0f;
+            for (size_t k = 0; k < la.size(); ++k) d = std::max (d, std::fabs (la[k] - lb[k]));
+            if (d > 1e-3f) anyDiffer = true;
+        }
+        check (anyDiffer, "factory presets are not all identical");
     }
 
     if (failures == 0)
