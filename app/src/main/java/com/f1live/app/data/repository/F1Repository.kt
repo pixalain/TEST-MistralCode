@@ -198,23 +198,23 @@ class F1Repository(
 
         val bestChampDeferred = async {
             try {
-                bestChampionshipPosition(driverId, seasonsDeferred.await())
+                championshipRecord(driverId, seasonsDeferred.await())
             } catch (e: Exception) {
-                null
+                0 to null
             }
         }
 
         val driver = infoDeferred.await()
         val base = resultsDeferred.await()
         val poles = qualifyingDeferred.await()
-        val bestChamp = bestChampDeferred.await()
+        val (titles, bestChamp) = bestChampDeferred.await()
         val seasonsCount = seasonsDeferred.await().size
 
         DriverProfile(
             driver = driver,
             stats = base.copy(
                 poles = poles,
-                championships = if (bestChamp == "1") 1 else 0,
+                championships = titles,
                 bestChampionship = bestChamp,
                 seasons = seasonsCount
             )
@@ -280,12 +280,19 @@ class F1Repository(
         return poles
     }
 
-    private suspend fun bestChampionshipPosition(driverId: String, seasons: List<String>): String? {
-        if (seasons.isEmpty()) return null
+    private suspend fun championshipRecord(driverId: String, seasons: List<String>): Pair<Int, String?> {
+        if (seasons.isEmpty()) return 0 to null
+        val currentSeason = try {
+            service.driverStandings().MRData.standingsTable.season
+        } catch (e: Exception) {
+            null
+        }
+        var titles = 0
         var best: Int? = null
-        for (season in seasons.sortedDescending()) {
+        for (season in seasons.sorted()) {
+            if (season == currentSeason) continue
             val page = try {
-                service.seasonDriverStandings(season)
+                withRetry429 { service.seasonDriverStandings(season) }
             } catch (e: Exception) {
                 continue
             }
@@ -294,11 +301,10 @@ class F1Repository(
                 .firstOrNull { it.Driver.driverId == driverId }
             val pos = entry?.positionText?.toIntOrNull()
                 ?: entry?.position?.toIntOrNull()
-            if (pos != null && (best == null || pos < best)) {
-                best = pos
-                if (best == 1) break
-            }
+                ?: continue
+            if (pos == 1) titles++
+            if (best == null || pos < best) best = pos
         }
-        return best?.toString()
+        return titles to best?.toString()
     }
 }
