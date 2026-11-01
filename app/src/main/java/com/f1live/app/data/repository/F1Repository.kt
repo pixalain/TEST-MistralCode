@@ -75,7 +75,7 @@ class F1Repository(
 
     private suspend fun alphaRoundId(season: String, round: String): String? = try {
         val year = season.toIntOrNull() ?: return null
-        val rounds = alpha.rounds(year).data ?: return null
+        val rounds = withRetry429 { alpha.rounds(year) }.data ?: return null
         rounds.firstOrNull { it.number == round.toIntOrNull() }?.id
     } catch (e: Exception) {
         null
@@ -87,7 +87,7 @@ class F1Repository(
         title: String
     ): SessionResults? = try {
         val envelope: AlphaEnvelope<com.f1live.app.data.model.AlphaSessionResults> =
-            alpha.sessionResults(roundId, code)
+            withRetry429 { alpha.sessionResults(roundId, code) }
         val body = envelope.data ?: return null
         SessionResults(
             code = code,
@@ -99,9 +99,27 @@ class F1Repository(
         null
     }
 
+    private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
+        var attempt = 0
+        while (true) {
+            try {
+                return block()
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 429 && attempt < maxRetries) {
+                    attempt++
+                    val waitMs = (e.response()?.headers()?.get("Retry-After")?.toLongOrNull() ?: 2L) * 1000 + 250
+                    kotlinx.coroutines.delay(waitMs)
+                    continue
+                }
+                throw e
+            }
+        }
+    }
+
     suspend fun raceResults(round: String): RaceDetail = coroutineScope {
         val resp = service.raceResults(round)
-        val race = resp.MRData.raceTable.Races.first()
+        val race = resp.MRData.raceTable.Races.firstOrNull()
+            ?: throw IllegalStateException("Grand Prix introuvable (round $round)")
         val results = race.Results.orEmpty()
 
         val sprintDeferred = async {
@@ -122,17 +140,21 @@ class F1Repository(
 
         val alphaDeferred = async {
             val roundId = alphaRoundId(race.season, round) ?: return@async emptyList<SessionResults>()
-            val codes = listOf(
-                "FP1" to "Practice 1",
-                "FP2" to "Practice 2",
-                "FP3" to "Practice 3",
-                "Q" to "Qualifying",
-                "SQ" to "Sprint Qualifying",
-                "SR" to "Sprint",
-                "R" to "Race"
-            )
+            val hasSprint = race.Sprint != null
+            val codes = buildList {
+                add("FP1" to "Practice 1")
+                add("FP2" to "Practice 2")
+                add("FP3" to "Practice 3")
+                add("Q" to "Qualifying")
+                if (hasSprint) {
+                    add("SQ" to "Sprint Qualifying")
+                    add("SR" to "Sprint")
+                }
+                add("R" to "Race")
+            }
             codes.map { (code, title) ->
                 async {
+                    kotlinx.coroutines.delay(300L * codes.indexOfFirst { it.first == code })
                     fetchAlphaSession(roundId, code, title)
                         ?: SessionResults(code, title, null, emptyList())
                 }

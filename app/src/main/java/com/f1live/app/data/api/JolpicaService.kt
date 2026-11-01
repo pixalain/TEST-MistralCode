@@ -111,18 +111,6 @@ object ApiClient {
                 .build()
             chain.proceed(req)
         }
-        .addInterceptor { chain ->
-            var response = chain.proceed(chain.request())
-            var tries = 0
-            while (response.code == 429 && tries < 3) {
-                val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: 2L
-                response.close()
-                Thread.sleep(retryAfter * 1000 + 250)
-                response = chain.proceed(chain.request())
-                tries++
-            }
-            response
-        }
         .addInterceptor(
             HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC

@@ -119,7 +119,14 @@ class F1ViewModel(
                 _raceDetail.value = UiState.Success(repository.raceResults(round))
                 _lastUpdated.value = System.currentTimeMillis()
             } catch (e: Exception) {
-                _raceDetail.value = UiState.Error(e.message ?: "Erreur inconnue")
+                val msg = when {
+                    e is retrofit2.HttpException && e.code() == 429 ->
+                        "Trop de requêtes vers l'API F1, réessayez dans quelques instants."
+                    e is java.net.UnknownHostException || e is java.net.SocketTimeoutException ->
+                        "Connexion impossible — vérifiez votre réseau."
+                    else -> e.message ?: "Erreur inconnue"
+                }
+                _raceDetail.value = UiState.Error(msg)
             }
         }
     }
