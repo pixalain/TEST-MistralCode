@@ -231,21 +231,19 @@ class F1Repository(
         val recent = mutableListOf<Pair<String, String>>()
         var firstPage = true
         while (offset < total && offset < 500) {
-            val page = service.driverResults(driverId, limit = 100, offset = offset)
+            val page = withRetry429 { service.driverResults(driverId, limit = 100, offset = offset) }
             val races = page.MRData.raceTable.Races
             if (races.isEmpty()) break
             total = page.total?.toIntOrNull() ?: races.size
             for (r in races) {
-                for (res in r.Results.orEmpty()) {
-                    if (res.Driver.driverId != driverId) continue
-                    points += res.points?.toDoubleOrNull() ?: 0.0
-                    val pos = res.position?.toIntOrNull()
-                    if (pos == 1) wins++
-                    if (pos != null && pos <= 3) podiums++
-                    if (res.FastestLap?.rank == "1") fastestLaps++
-                    if (firstPage && recent.size < 10) {
-                        recent.add("${r.season} ${r.raceName}" to res.displayPosition)
-                    }
+                val res = r.Results.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
+                points += res.points?.toDoubleOrNull() ?: 0.0
+                val pos = res.position?.toIntOrNull()
+                if (pos == 1) wins++
+                if (pos != null && pos <= 3) podiums++
+                if (res.FastestLap?.rank == "1") fastestLaps++
+                if (firstPage && recent.size < 10) {
+                    recent.add("${r.season} ${r.raceName}" to res.displayPosition)
                 }
             }
             offset += races.size
@@ -266,14 +264,13 @@ class F1Repository(
         var poles = 0
         var totalQ = Int.MAX_VALUE
         while (offset < totalQ && offset < 500) {
-            val page = service.driverQualifying(driverId, limit = 100, offset = offset)
+            val page = withRetry429 { service.driverQualifying(driverId, limit = 100, offset = offset) }
             val races = page.MRData.raceTable.Races
             if (races.isEmpty()) break
             totalQ = page.total?.toIntOrNull() ?: 0
             for (r in races) {
-                for (q in r.QualifyingResults.orEmpty()) {
-                    if (q.Driver.driverId == driverId && q.position == "1") poles++
-                }
+                val q = r.QualifyingResults.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
+                if (q.position == "1") poles++
             }
             offset += races.size
         }
