@@ -80,6 +80,13 @@ interface JolpicaService {
         @Path("driverId") driverId: String,
         @Query("limit") limit: Int = 100
     ): Envelope<SeasonsData>
+
+    @GET("ergast/f1/drivers/{driverId}/sprint.json")
+    suspend fun driverSprint(
+        @Path("driverId") driverId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
+    ): Envelope<RacesData>
 }
 
 interface AlphaService {

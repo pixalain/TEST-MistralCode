@@ -133,7 +133,7 @@ data class Race(
     val Sprint: Session? = null,
     val Results: List<Result>? = null,
     val QualifyingResults: List<QualifyingResult>? = null,
-    val SprintResults: List<Result>? = null
+    @SerialName("SprintResults") val sprintResults: List<Result>? = null
 ) {
     val locality: String get() = Circuit.Location.locality
     val country: String get() = Circuit.Location.country
@@ -159,7 +159,8 @@ data class SprintRace(
     val Circuit: Circuit,
     val date: String,
     val time: String? = null,
-    val Sprint: List<Result>? = null
+    val Sprint: List<Result>? = null,
+    @SerialName("SprintResults") val sprintResults: List<Result>? = null
 )
 
 @Serializable

@@ -41,7 +41,9 @@ data class DriverStats(
     val bestChampionship: String? = null,
     val seasons: Int = 0,
     val currentTeam: String? = null,
-    val recentForm: List<Pair<String, String>> = emptyList()
+    val recentForm: List<Pair<String, String>> = emptyList(),
+    val sprintWins: Int = 0,
+    val sprintPoints: Double = 0.0
 )
 
 data class DriverProfile(
@@ -249,12 +251,33 @@ class F1Repository(
             offset += races.size
             firstPage = false
         }
+        var sprintPoints = 0.0
+        var sprintWins = 0
+        try {
+            var sOffset = 0
+            var sTotal = Int.MAX_VALUE
+            while (sOffset < sTotal && sOffset < 500) {
+                val page = withRetry429 { service.driverSprint(driverId, limit = 100, offset = sOffset) }
+                val sRaces = page.MRData.raceTable.Races
+                if (sRaces.isEmpty()) break
+                sTotal = page.total?.toIntOrNull() ?: sRaces.size
+                for (r in sRaces) {
+                    val res = r.sprintResults.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
+                    sprintPoints += res.points?.toDoubleOrNull() ?: 0.0
+                    if (res.position?.toIntOrNull() == 1) sprintWins++
+                }
+                sOffset += sRaces.size
+            }
+        } catch (e: Exception) {
+        }
         return DriverStats(
             races = total.coerceAtMost(offset),
             wins = wins,
             podiums = podiums,
             fastestLaps = fastestLaps,
-            points = points,
+            points = points + sprintPoints,
+            sprintWins = sprintWins,
+            sprintPoints = sprintPoints,
             recentForm = recent
         )
     }
