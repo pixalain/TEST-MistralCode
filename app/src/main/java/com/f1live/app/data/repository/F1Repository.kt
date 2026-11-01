@@ -159,70 +159,28 @@ class F1Repository(
         }
 
         val resultsDeferred = async {
-            var offset = 0
-            var total = Int.MAX_VALUE
-            var wins = 0
-            var podiums = 0
-            var fastestLaps = 0
-            var points = 0.0
-            val recent = mutableListOf<Pair<String, String>>()
-            var firstPage = true
-            while (offset < total && offset < 500) {
-                val page = service.driverResults(driverId, limit = 100, offset = offset)
-                val races = page.MRData.raceTable.Races
-                if (races.isEmpty()) break
-                total = page.MRData.total?.toIntOrNull() ?: races.size
-                for (r in races) {
-                    for (res in r.Results.orEmpty()) {
-                        if (res.Driver.driverId != driverId) continue
-                        points += res.points?.toDoubleOrNull() ?: 0.0
-                        val pos = res.position?.toIntOrNull()
-                        if (pos == 1) wins++
-                        if (pos != null && pos <= 3) podiums++
-                        if (res.FastestLap?.rank == "1") fastestLaps++
-                        if (firstPage && recent.size < 10) {
-                            recent.add("${r.season} ${r.raceName}" to res.displayPosition)
-                        }
-                    }
-                }
-                offset += races.size
-                firstPage = false
+            try {
+                aggregateResults(driverId)
+            } catch (e: Exception) {
+                DriverStats(currentTeam = currentTeam, recentForm = emptyList())
             }
-            DriverStats(
-                races = total.coerceAtMost(offset),
-                wins = wins,
-                podiums = podiums,
-                fastestLaps = fastestLaps,
-                points = points,
-                currentTeam = currentTeam,
-                recentForm = recent
-            )
         }
 
         val qualifyingDeferred = async {
-            var offset = 0
-            var poles = 0
-            var totalQ = Int.MAX_VALUE
-            while (offset < totalQ && offset < 500) {
-                val page = try {
-                    service.driverQualifying(driverId, limit = 100, offset = offset)
-                } catch (e: Exception) {
-                    break
-                }
-                val races = page.MRData.raceTable.Races
-                if (races.isEmpty()) break
-                totalQ = page.MRData.total?.toIntOrNull() ?: 0
-                for (r in races) {
-                    for (q in r.QualifyingResults.orEmpty()) {
-                        if (q.Driver.driverId == driverId && q.position == "1") poles++
-                    }
-                }
-                offset += races.size
+            try {
+                countPoles(driverId)
+            } catch (e: Exception) {
+                0
             }
-            poles
         }
 
-        val bestChampDeferred = async { bestChampionshipPosition(driverId, seasonsDeferred.await()) }
+        val bestChampDeferred = async {
+            try {
+                bestChampionshipPosition(driverId, seasonsDeferred.await())
+            } catch (e: Exception) {
+                null
+            }
+        }
 
         val driver = infoDeferred.await()
         val base = resultsDeferred.await()
@@ -239,6 +197,65 @@ class F1Repository(
                 seasons = seasonsCount
             )
         )
+    }
+
+    private suspend fun aggregateResults(driverId: String): DriverStats {
+        var offset = 0
+        var total = Int.MAX_VALUE
+        var wins = 0
+        var podiums = 0
+        var fastestLaps = 0
+        var points = 0.0
+        val recent = mutableListOf<Pair<String, String>>()
+        var firstPage = true
+        while (offset < total && offset < 500) {
+            val page = service.driverResults(driverId, limit = 100, offset = offset)
+            val races = page.MRData.raceTable.Races
+            if (races.isEmpty()) break
+            total = page.total?.toIntOrNull() ?: races.size
+            for (r in races) {
+                for (res in r.Results.orEmpty()) {
+                    if (res.Driver.driverId != driverId) continue
+                    points += res.points?.toDoubleOrNull() ?: 0.0
+                    val pos = res.position?.toIntOrNull()
+                    if (pos == 1) wins++
+                    if (pos != null && pos <= 3) podiums++
+                    if (res.FastestLap?.rank == "1") fastestLaps++
+                    if (firstPage && recent.size < 10) {
+                        recent.add("${r.season} ${r.raceName}" to res.displayPosition)
+                    }
+                }
+            }
+            offset += races.size
+            firstPage = false
+        }
+        return DriverStats(
+            races = total.coerceAtMost(offset),
+            wins = wins,
+            podiums = podiums,
+            fastestLaps = fastestLaps,
+            points = points,
+            recentForm = recent
+        )
+    }
+
+    private suspend fun countPoles(driverId: String): Int {
+        var offset = 0
+        var poles = 0
+        var totalQ = Int.MAX_VALUE
+        while (offset < totalQ && offset < 500) {
+            val page = service.driverQualifying(driverId, limit = 100, offset = offset)
+            val races = page.MRData.raceTable.Races
+            if (races.isEmpty()) break
+            totalQ = page.total?.toIntOrNull() ?: 0
+            for (r in races) {
+                for (q in r.QualifyingResults.orEmpty()) {
+                    if (q.Driver.driverId == driverId && q.position == "1") poles++
+                }
+            }
+            offset += races.size
+        }
+        return poles
     }
 
     private suspend fun bestChampionshipPosition(driverId: String, seasons: List<String>): String? {

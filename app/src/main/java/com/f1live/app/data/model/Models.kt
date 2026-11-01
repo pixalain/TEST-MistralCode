@@ -4,7 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Envelope<T>(val MRData: T)
+data class Envelope<T>(
+    val MRData: T,
+    val total: String? = null,
+    val limit: String? = null,
+    val offset: String? = null
+)
 
 @Serializable
 data class DriverStandingsData(
