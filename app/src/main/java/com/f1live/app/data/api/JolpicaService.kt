@@ -10,6 +10,7 @@ import com.f1live.app.data.model.DriverStandingsData
 import com.f1live.app.data.model.DriversData
 import com.f1live.app.data.model.Envelope
 import com.f1live.app.data.model.RacesData
+import com.f1live.app.data.model.SeasonsData
 import com.f1live.app.data.model.SprintData
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -73,6 +74,12 @@ interface JolpicaService {
         @Query("limit") limit: Int = 100,
         @Query("offset") offset: Int = 0
     ): Envelope<RacesData>
+
+    @GET("ergast/f1/drivers/{driverId}/seasons.json")
+    suspend fun driverSeasons(
+        @Path("driverId") driverId: String,
+        @Query("limit") limit: Int = 100
+    ): Envelope<SeasonsData>
 }
 
 interface AlphaService {
@@ -104,6 +111,18 @@ object ApiClient {
                 .build()
             chain.proceed(req)
         }
+        .addInterceptor { chain ->
+            var response = chain.proceed(chain.request())
+            var tries = 0
+            while (response.code == 429 && tries < 3) {
+                val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: 2L
+                response.close()
+                Thread.sleep(retryAfter * 1000 + 250)
+                response = chain.proceed(chain.request())
+                tries++
+            }
+            response
+        }
         .addInterceptor(
             HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BASIC
@@ -111,6 +130,7 @@ object ApiClient {
         )
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val retrofit = Retrofit.Builder()

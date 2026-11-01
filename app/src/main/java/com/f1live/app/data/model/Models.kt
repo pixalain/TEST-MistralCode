@@ -82,6 +82,24 @@ data class DriversData(
 )
 
 @Serializable
+data class SeasonsData(
+    @SerialName("SeasonTable") val seasonTable: SeasonTable,
+    @SerialName("total") val total: String? = null
+)
+
+@Serializable
+data class SeasonTable(
+    val driverId: String? = null,
+    val Seasons: List<SeasonEntry> = emptyList()
+)
+
+@Serializable
+data class SeasonEntry(
+    val season: String,
+    val url: String? = null
+)
+
+@Serializable
 data class DriverTable(
     val driverId: String? = null,
     val Drivers: List<Driver> = emptyList()
