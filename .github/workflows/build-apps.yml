@@ -68,10 +68,11 @@ jobs:
       - name: Empaqueter le .app iOS en ZIP
         run: |
           cd build/ios/iphonesimulator
-          zip -r ../../../../ferrari-history-ios-simulator.zip Runner.app
+          zip -r "$GITHUB_WORKSPACE/ferrari-history-ios-simulator.zip" Runner.app
+          ls -la "$GITHUB_WORKSPACE/ferrari-history-ios-simulator.zip"
 
       - name: Publier le .app iOS en artefact (lien de téléchargement iOS)
         uses: actions/upload-artifact@v4
         with:
           name: ferrari-history-ios-app
-          path: build/ferrari-history-ios-simulator.zip
+          path: ferrari-history-ios-simulator.zip
