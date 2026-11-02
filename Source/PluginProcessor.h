@@ -41,7 +41,7 @@ private:
     juce::Reverb reverb;
     juce::Reverb::Parameters reverbParams;
 
-    using DelayLineType = juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange>;
+    using DelayLineType = juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange3rd>;
     static constexpr float maxDelaySamples = 192000.0f;
 
     DelayLineType delayLineL { maxDelaySamples };

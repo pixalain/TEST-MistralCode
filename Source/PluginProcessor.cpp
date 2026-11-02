@@ -16,7 +16,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "delayTime", 1 },
         "Delay Time",
-        juce::NormalisableRange<float> (0.01f, 1.0f, 0.001f).withSkewForCentre (0.3f),
+        juce::NormalisableRange<float> (0.01f, 1.0f, 0.001f),
         0.35f,
         juce::AudioParameterFloatAttributes().withLabel ("s")));
 
