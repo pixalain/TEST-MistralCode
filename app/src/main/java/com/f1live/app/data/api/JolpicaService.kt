@@ -8,10 +8,10 @@ import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
 import com.f1live.app.data.model.DriversData
-import com.f1live.app.data.model.Envelope
 import com.f1live.app.data.model.RacesData
 import com.f1live.app.data.model.SeasonsData
 import com.f1live.app.data.model.SprintData
+import kotlinx.serialization.json.JsonObject
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -26,67 +26,67 @@ import java.util.concurrent.TimeUnit
 interface JolpicaService {
 
     @GET("ergast/f1/current/driverStandings.json")
-    suspend fun driverStandings(@Query("limit") limit: Int = 100): Envelope<DriverStandingsData>
+    suspend fun driverStandings(@Query("limit") limit: Int = 100): JsonObject
 
     @GET("ergast/f1/{season}/driverStandings.json")
     suspend fun seasonDriverStandings(
         @Path("season") season: String,
         @Query("limit") limit: Int = 100
-    ): Envelope<DriverStandingsData>
+    ): JsonObject
 
     @GET("ergast/f1/current/constructorStandings.json")
-    suspend fun constructorStandings(@Query("limit") limit: Int = 100): Envelope<ConstructorStandingsData>
+    suspend fun constructorStandings(@Query("limit") limit: Int = 100): JsonObject
 
     @GET("ergast/f1/current.json")
-    suspend fun seasonSchedule(@Query("limit") limit: Int = 100): Envelope<RacesData>
+    suspend fun seasonSchedule(@Query("limit") limit: Int = 100): JsonObject
 
     @GET("ergast/f1/current/{round}/results.json")
     suspend fun raceResults(
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
-    ): Envelope<RacesData>
+    ): JsonObject
 
     @GET("ergast/f1/current/{round}/sprint.json")
     suspend fun sprintResults(
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
-    ): Envelope<SprintData>
+    ): JsonObject
 
     @GET("ergast/f1/current/{round}/qualifying.json")
     suspend fun qualifyingResults(
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
-    ): Envelope<RacesData>
+    ): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}.json")
-    suspend fun driverInfo(@Path("driverId") driverId: String): Envelope<DriversData>
+    suspend fun driverInfo(@Path("driverId") driverId: String): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}/results.json")
     suspend fun driverResults(
         @Path("driverId") driverId: String,
         @Query("limit") limit: Int = 100,
         @Query("offset") offset: Int = 0
-    ): Envelope<RacesData>
+    ): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}/qualifying.json")
     suspend fun driverQualifying(
         @Path("driverId") driverId: String,
         @Query("limit") limit: Int = 100,
         @Query("offset") offset: Int = 0
-    ): Envelope<RacesData>
+    ): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}/seasons.json")
     suspend fun driverSeasons(
         @Path("driverId") driverId: String,
         @Query("limit") limit: Int = 100
-    ): Envelope<SeasonsData>
+    ): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}/sprint.json")
     suspend fun driverSprint(
         @Path("driverId") driverId: String,
         @Query("limit") limit: Int = 100,
         @Query("offset") offset: Int = 0
-    ): Envelope<RacesData>
+    ): JsonObject
 }
 
 interface AlphaService {

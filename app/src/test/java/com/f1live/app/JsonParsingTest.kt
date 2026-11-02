@@ -1,6 +1,8 @@
 package com.f1live.app
 
 import com.f1live.app.data.model.AlphaEnvelope
+import com.f1live.app.data.repository.F1Json
+import kotlinx.serialization.json.Json as KJson
 import com.f1live.app.data.model.AlphaSessionResults
 import com.f1live.app.data.model.ConstructorStandingsData
 import com.f1live.app.data.model.DriverStandingsData
@@ -15,6 +17,7 @@ import com.f1live.app.ui.screens.findCurrentOrLastRace
 import com.f1live.app.ui.screens.sessionDateTime
 import com.f1live.app.ui.screens.sessionStatus
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -39,9 +42,10 @@ class JsonParsingTest {
 
     @Test
     fun parsesDriverStandings() {
-        val env = json.decodeFromString<com.f1live.app.data.model.Envelope<DriverStandingsData>>(driverStandingsJson)
-        val list = env.MRData.standingsTable.StandingsLists.first().DriverStandings!!
-        assertEquals("2026", env.MRData.standingsTable.season)
+        val obj = Json.parseToJsonElement(driverStandingsJson).jsonObject
+        val data = F1Json.driverStandings(obj)
+        val list = data.standingsTable.StandingsLists.first().DriverStandings!!
+        assertEquals("2026", data.standingsTable.season)
         assertEquals(1, list.size)
         val d = list.first()
         assertEquals("Antonelli", d.Driver.familyName)
@@ -51,8 +55,9 @@ class JsonParsingTest {
 
     @Test
     fun parsesRaceResults() {
-        val env = json.decodeFromString<com.f1live.app.data.model.Envelope<RacesData>>(raceJson)
-        val race = env.MRData.raceTable.Races.first()
+        val obj = Json.parseToJsonElement(raceJson).jsonObject
+        val data = F1Json.races(obj)
+        val race = data.raceTable.Races.first()
         assertEquals("Japanese Grand Prix", race.raceName)
         assertEquals("Suzuka", race.locality)
         val r = race.Results!!.first()
@@ -108,8 +113,9 @@ class JsonParsingTest {
 
     @Test
     fun parsesConstructorStandings() {
-        val env = json.decodeFromString<com.f1live.app.data.model.Envelope<ConstructorStandingsData>>(constructorsJson)
-        val c = env.MRData.standingsTable.StandingsLists.first().ConstructorStandings!!.first()
+        val obj = Json.parseToJsonElement(constructorsJson).jsonObject
+        val data = F1Json.constructorStandings(obj)
+        val c = data.standingsTable.StandingsLists.first().ConstructorStandings!!.first()
         assertEquals("Mercedes", c.Constructor.name)
         assertEquals("607", c.points)
         assertTrue(c.position == "1")

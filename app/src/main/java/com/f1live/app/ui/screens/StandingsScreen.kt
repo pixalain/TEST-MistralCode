@@ -126,7 +126,7 @@ private fun DriverRow(d: DriverStanding, onClick: () -> Unit = {}) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = d.position,
+                text = d.position ?: d.positionText ?: "-",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(28.dp)
@@ -189,7 +189,7 @@ private fun TeamRow(c: ConstructorStanding) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = c.position,
+                text = c.position ?: c.positionText ?: "-",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(28.dp)

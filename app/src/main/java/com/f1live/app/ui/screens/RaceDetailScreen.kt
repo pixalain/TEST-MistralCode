@@ -241,7 +241,7 @@ private fun LegacyQualifyingList(race: com.f1live.app.data.model.Race, qualifyin
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = q.position,
+                            text = q.position ?: "-",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.width(30.dp)

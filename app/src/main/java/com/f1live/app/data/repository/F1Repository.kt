@@ -14,6 +14,7 @@ import com.f1live.app.data.model.Result
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 
 data class SessionResults(
     val code: String,
@@ -57,22 +58,39 @@ class F1Repository(
 ) {
 
     suspend fun driverStandings(): Pair<String, List<DriverStanding>> {
-        val resp = service.driverStandings()
-        val table = resp.MRData.standingsTable
+        val data = F1Json.driverStandings(service.driverStandings())
+        val table = data.standingsTable
         val list = table.StandingsLists.firstOrNull()?.DriverStandings.orEmpty()
         return table.season to list
     }
 
     suspend fun constructorStandings(): Pair<String, List<ConstructorStanding>> {
-        val resp = service.constructorStandings()
-        val table = resp.MRData.standingsTable
+        val data = F1Json.constructorStandings(service.constructorStandings())
+        val table = data.standingsTable
         val list = table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()
         return table.season to list
     }
 
     suspend fun seasonSchedule(): Pair<String, List<Race>> {
-        val resp = service.seasonSchedule()
-        return resp.MRData.raceTable.season to resp.MRData.raceTable.Races
+        val data = F1Json.races(service.seasonSchedule())
+        return data.raceTable.season to data.raceTable.Races
+    }
+
+    private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
+        var attempt = 0
+        while (true) {
+            try {
+                return block()
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 429 && attempt < maxRetries) {
+                    attempt++
+                    val waitMs = (e.response()?.headers()?.get("Retry-After")?.toLongOrNull() ?: 2L) * 1000 + 250
+                    delay(waitMs)
+                    continue
+                }
+                throw e
+            }
+        }
     }
 
     private suspend fun alphaRoundId(season: String, round: String): String? = try {
@@ -101,39 +119,24 @@ class F1Repository(
         null
     }
 
-    private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
-        var attempt = 0
-        while (true) {
-            try {
-                return block()
-            } catch (e: retrofit2.HttpException) {
-                if (e.code() == 429 && attempt < maxRetries) {
-                    attempt++
-                    val waitMs = (e.response()?.headers()?.get("Retry-After")?.toLongOrNull() ?: 2L) * 1000 + 250
-                    kotlinx.coroutines.delay(waitMs)
-                    continue
-                }
-                throw e
-            }
-        }
-    }
-
     suspend fun raceResults(round: String): RaceDetail = coroutineScope {
-        val resp = service.raceResults(round)
-        val race = resp.MRData.raceTable.Races.firstOrNull()
+        val raw = service.raceResults(round)
+        val data = F1Json.races(raw)
+        val race = data.raceTable.Races.firstOrNull()
             ?: throw IllegalStateException("Grand Prix introuvable (round $round)")
         val results = race.Results.orEmpty()
 
         val sprintDeferred = async {
             try {
-                service.sprintResults(round).MRData.raceTable.Races.firstOrNull()?.Sprint.orEmpty()
+                F1Json.races(service.sprintResults(round)).raceTable.Races.firstOrNull()
+                    ?.sprintResults.orEmpty()
             } catch (e: Exception) {
                 emptyList<Result>()
             }
         }
         val qualifyingDeferred = async {
             try {
-                service.qualifyingResults(round).MRData.raceTable.Races.firstOrNull()
+                F1Json.races(service.qualifyingResults(round)).raceTable.Races.firstOrNull()
                     ?.QualifyingResults.orEmpty()
             } catch (e: Exception) {
                 emptyList<QualifyingResult>()
@@ -154,9 +157,9 @@ class F1Repository(
                 }
                 add("R" to "Race")
             }
-            codes.map { (code, title) ->
+            codes.mapIndexed { i, (code, title) ->
                 async {
-                    kotlinx.coroutines.delay(300L * codes.indexOfFirst { it.first == code })
+                    delay(300L * i)
                     fetchAlphaSession(roundId, code, title)
                         ?: SessionResults(code, title, null, emptyList())
                 }
@@ -173,10 +176,10 @@ class F1Repository(
     }
 
     suspend fun driverProfile(driverId: String, currentTeam: String? = null): DriverProfile = coroutineScope {
-        val infoDeferred = async { service.driverInfo(driverId).MRData.driverTable.Drivers.first() }
+        val infoDeferred = async { F1Json.drivers(service.driverInfo(driverId)).driverTable.Drivers.first() }
         val seasonsDeferred = async {
             try {
-                service.driverSeasons(driverId).MRData.seasonTable.Seasons.map { it.season }
+                F1Json.seasons(service.driverSeasons(driverId)).seasonTable.Seasons.map { it.season }
             } catch (e: Exception) {
                 emptyList()
             }
@@ -233,10 +236,11 @@ class F1Repository(
         val recent = mutableListOf<Pair<String, String>>()
         var firstPage = true
         while (offset < total && offset < 500) {
-            val page = withRetry429 { service.driverResults(driverId, limit = 100, offset = offset) }
-            val races = page.MRData.raceTable.Races
+            val raw = withRetry429 { service.driverResults(driverId, limit = 100, offset = offset) }
+            val page = F1Json.races(raw)
+            total = F1Json.total(raw)?.toIntOrNull() ?: page.raceTable.Races.size
+            val races = page.raceTable.Races
             if (races.isEmpty()) break
-            total = page.total?.toIntOrNull() ?: races.size
             for (r in races) {
                 val res = r.Results.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
                 points += res.points?.toDoubleOrNull() ?: 0.0
@@ -257,10 +261,11 @@ class F1Repository(
             var sOffset = 0
             var sTotal = Int.MAX_VALUE
             while (sOffset < sTotal && sOffset < 500) {
-                val page = withRetry429 { service.driverSprint(driverId, limit = 100, offset = sOffset) }
-                val sRaces = page.MRData.raceTable.Races
+                val raw = withRetry429 { service.driverSprint(driverId, limit = 100, offset = sOffset) }
+                val page = F1Json.races(raw)
+                val sRaces = page.raceTable.Races
                 if (sRaces.isEmpty()) break
-                sTotal = page.total?.toIntOrNull() ?: sRaces.size
+                sTotal = F1Json.total(raw)?.toIntOrNull() ?: sRaces.size
                 for (r in sRaces) {
                     val res = r.sprintResults.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
                     sprintPoints += res.points?.toDoubleOrNull() ?: 0.0
@@ -287,10 +292,11 @@ class F1Repository(
         var poles = 0
         var totalQ = Int.MAX_VALUE
         while (offset < totalQ && offset < 500) {
-            val page = withRetry429 { service.driverQualifying(driverId, limit = 100, offset = offset) }
-            val races = page.MRData.raceTable.Races
+            val raw = withRetry429 { service.driverQualifying(driverId, limit = 100, offset = offset) }
+            val page = F1Json.races(raw)
+            val races = page.raceTable.Races
             if (races.isEmpty()) break
-            totalQ = page.total?.toIntOrNull() ?: 0
+            totalQ = F1Json.total(raw)?.toIntOrNull() ?: 0
             for (r in races) {
                 val q = r.QualifyingResults.orEmpty().firstOrNull { it.Driver.driverId == driverId } ?: continue
                 if (q.position == "1") poles++
@@ -303,7 +309,7 @@ class F1Repository(
     private suspend fun championshipRecord(driverId: String, seasons: List<String>): Pair<Int, String?> {
         if (seasons.isEmpty()) return 0 to null
         val currentSeason = try {
-            service.driverStandings().MRData.standingsTable.season
+            F1Json.driverStandings(service.driverStandings()).standingsTable.season
         } catch (e: Exception) {
             null
         }
@@ -311,17 +317,20 @@ class F1Repository(
         var best: Int? = null
         for (season in seasons.sorted()) {
             if (season == currentSeason) continue
-            val page = try {
+            val raw = try {
                 withRetry429 { service.seasonDriverStandings(season) }
             } catch (e: Exception) {
                 continue
             }
-            val entry = page.MRData.standingsTable.StandingsLists.firstOrNull()
+            val data = F1Json.driverStandings(raw)
+            val entry = data.standingsTable.StandingsLists.firstOrNull()
                 ?.DriverStandings.orEmpty()
                 .firstOrNull { it.Driver.driverId == driverId }
-            val pos = entry?.positionText?.toIntOrNull()
-                ?: entry?.position?.toIntOrNull()
-                ?: continue
+            if (entry == null) continue
+            val posText = entry.positionText?.trim()
+            val pos = if (posText != null && posText.all { it.isDigit() }) posText.toInt()
+                      else entry.position?.trim()?.toIntOrNull()
+                      ?: continue
             if (pos == 1) titles++
             if (best == null || pos < best) best = pos
         }

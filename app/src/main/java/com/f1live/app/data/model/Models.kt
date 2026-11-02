@@ -4,28 +4,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Envelope<T>(
-    val MRData: T,
-    val total: String? = null,
-    val limit: String? = null,
-    val offset: String? = null
-)
-
-@Serializable
 data class DriverStandingsData(
-    @SerialName("StandingsTable") val standingsTable: StandingsTable,
-    @SerialName("total") val total: String? = null
+    @SerialName("StandingsTable") val standingsTable: StandingsTable
 )
 
 @Serializable
 data class ConstructorStandingsData(
-    @SerialName("StandingsTable") val standingsTable: StandingsTable,
-    @SerialName("total") val total: String? = null
+    @SerialName("StandingsTable") val standingsTable: StandingsTable
 )
 
 @Serializable
 data class StandingsTable(
-    val season: String,
+    val season: String = "",
     val round: String? = null,
     val StandingsLists: List<StandingsList> = emptyList()
 )
@@ -40,7 +30,7 @@ data class StandingsList(
 
 @Serializable
 data class DriverStanding(
-    val position: String,
+    val position: String? = null,
     val positionText: String? = null,
     val points: String,
     val wins: String? = null,
@@ -50,7 +40,7 @@ data class DriverStanding(
 
 @Serializable
 data class ConstructorStanding(
-    val position: String,
+    val position: String? = null,
     val positionText: String? = null,
     val points: String,
     val wins: String? = null,
@@ -62,6 +52,7 @@ data class Driver(
     val driverId: String,
     val permanentNumber: String? = null,
     val code: String? = null,
+    val url: String? = null,
     val givenName: String,
     val familyName: String,
     val dateOfBirth: String? = null,
@@ -77,8 +68,7 @@ data class Constructor(
 
 @Serializable
 data class RacesData(
-    @SerialName("RaceTable") val raceTable: RaceTable,
-    @SerialName("total") val total: String? = null
+    @SerialName("RaceTable") val raceTable: RaceTable
 )
 
 @Serializable
@@ -87,9 +77,14 @@ data class DriversData(
 )
 
 @Serializable
+data class DriverTable(
+    val driverId: String? = null,
+    val Drivers: List<Driver> = emptyList()
+)
+
+@Serializable
 data class SeasonsData(
-    @SerialName("SeasonTable") val seasonTable: SeasonTable,
-    @SerialName("total") val total: String? = null
+    @SerialName("SeasonTable") val seasonTable: SeasonTable
 )
 
 @Serializable
@@ -105,14 +100,9 @@ data class SeasonEntry(
 )
 
 @Serializable
-data class DriverTable(
-    val driverId: String? = null,
-    val Drivers: List<Driver> = emptyList()
-)
-
-@Serializable
 data class RaceTable(
-    val season: String,
+    val season: String = "",
+    val driverId: String? = null,
     val Races: List<Race> = emptyList()
 )
 
@@ -147,7 +137,8 @@ data class SprintData(
 
 @Serializable
 data class SprintRaceTable(
-    val season: String,
+    val season: String = "",
+    val driverId: String? = null,
     val Races: List<SprintRace> = emptyList()
 )
 
@@ -166,7 +157,7 @@ data class SprintRace(
 @Serializable
 data class QualifyingResult(
     val number: String? = null,
-    val position: String,
+    val position: String? = null,
     val Driver: Driver,
     val Constructor: Constructor,
     val Q1: String? = null,
