@@ -3,11 +3,11 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
-class MonPremierVSTAudioProcessor final : public juce::AudioProcessor
+class VSTbyIAAudioProcessor final : public juce::AudioProcessor
 {
 public:
-    MonPremierVSTAudioProcessor();
-    ~MonPremierVSTAudioProcessor() override;
+    VSTbyIAAudioProcessor();
+    ~VSTbyIAAudioProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -41,5 +41,13 @@ private:
     juce::Reverb reverb;
     juce::Reverb::Parameters reverbParams;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MonPremierVSTAudioProcessor)
+    using DelayLineType = juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange>;
+    static constexpr float maxDelaySamples = 192000.0f;
+
+    DelayLineType delayLineL { maxDelaySamples };
+    DelayLineType delayLineR { maxDelaySamples };
+    juce::SmoothedValue<float> delaySmoothL;
+    juce::SmoothedValue<float> delaySmoothR;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTbyIAAudioProcessor)
 };

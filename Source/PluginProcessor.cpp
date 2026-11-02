@@ -14,6 +14,25 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         0.8f));
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayTime", 1 },
+        "Delay Time",
+        juce::NormalisableRange<float> (0.01f, 1.0f, 0.001f).withSkewForCentre (0.3f),
+        0.35f,
+        juce::AudioParameterFloatAttributes().withLabel ("s")));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayFeedback", 1 },
+        "Feedback",
+        juce::NormalisableRange<float> (0.0f, 0.9f, 0.01f),
+        0.35f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "delayMix", 1 },
+        "Delay Mix",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.3f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "reverbMix", 1 },
         "Reverb Mix",
         juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
@@ -35,7 +54,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 }
 }
 
-MonPremierVSTAudioProcessor::MonPremierVSTAudioProcessor()
+VSTbyIAAudioProcessor::VSTbyIAAudioProcessor()
     : AudioProcessor (BusesProperties()
           .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
           .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
@@ -43,22 +62,22 @@ MonPremierVSTAudioProcessor::MonPremierVSTAudioProcessor()
 {
 }
 
-MonPremierVSTAudioProcessor::~MonPremierVSTAudioProcessor() = default;
+VSTbyIAAudioProcessor::~VSTbyIAAudioProcessor() = default;
 
-const juce::String MonPremierVSTAudioProcessor::getName() const { return "VST by IA"; }
+const juce::String VSTbyIAAudioProcessor::getName() const { return "VST by IA"; }
 
-bool MonPremierVSTAudioProcessor::acceptsMidi() const   { return false; }
-bool MonPremierVSTAudioProcessor::producesMidi() const  { return false; }
-bool MonPremierVSTAudioProcessor::isMidiEffect() const  { return false; }
-double MonPremierVSTAudioProcessor::getTailLengthSeconds() const { return 3.0; }
+bool VSTbyIAAudioProcessor::acceptsMidi() const   { return false; }
+bool VSTbyIAAudioProcessor::producesMidi() const  { return false; }
+bool VSTbyIAAudioProcessor::isMidiEffect() const  { return false; }
+double VSTbyIAAudioProcessor::getTailLengthSeconds() const { return 4.0; }
 
-int MonPremierVSTAudioProcessor::getNumPrograms()   { return 1; }
-int MonPremierVSTAudioProcessor::getCurrentProgram() { return 0; }
-void MonPremierVSTAudioProcessor::setCurrentProgram (int) {}
-const juce::String MonPremierVSTAudioProcessor::getProgramName (int) { return {}; }
-void MonPremierVSTAudioProcessor::changeProgramName (int, const juce::String&) {}
+int VSTbyIAAudioProcessor::getNumPrograms()    { return 1; }
+int VSTbyIAAudioProcessor::getCurrentProgram() { return 0; }
+void VSTbyIAAudioProcessor::setCurrentProgram (int) {}
+const juce::String VSTbyIAAudioProcessor::getProgramName (int) { return {}; }
+void VSTbyIAAudioProcessor::changeProgramName (int, const juce::String&) {}
 
-void MonPremierVSTAudioProcessor::prepareToPlay (double sampleRate, int)
+void VSTbyIAAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     reverb.setSampleRate (sampleRate);
     reverbParams.roomSize = 0.6f;
@@ -67,30 +86,78 @@ void MonPremierVSTAudioProcessor::prepareToPlay (double sampleRate, int)
     reverbParams.dryLevel = 1.0f;
     reverbParams.width    = 1.0f;
     reverb.setParameters (reverbParams);
-}
-void MonPremierVSTAudioProcessor::releaseResources() { reverb.reset(); }
 
-bool MonPremierVSTAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+    juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) samplesPerBlock, 2 };
+    delayLineL.prepare (spec);
+    delayLineR.prepare (spec);
+    delayLineL.reset();
+    delayLineR.reset();
+
+    const float initialDelay = juce::jlimit (1.0f, maxDelaySamples - 1.0f, 0.35f * (float) sampleRate);
+    delaySmoothL.reset (sampleRate, 0.03);
+    delaySmoothR.reset (sampleRate, 0.03);
+    delaySmoothL.setCurrentAndTargetValue (initialDelay);
+    delaySmoothR.setCurrentAndTargetValue (initialDelay);
+}
+
+void VSTbyIAAudioProcessor::releaseResources()
+{
+    reverb.reset();
+    delayLineL.reset();
+    delayLineR.reset();
+}
+
+bool VSTbyIAAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     return layouts.getMainInputChannelSet()  == juce::AudioChannelSet::stereo()
         && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
 }
 
-void MonPremierVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void VSTbyIAAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
 
-    const auto gain    = parameters.getRawParameterValue ("gain")->load();
-    const auto mix     = parameters.getRawParameterValue ("reverbMix")->load();
-    const auto room    = parameters.getRawParameterValue ("reverbRoom")->load();
-    const auto damping = parameters.getRawParameterValue ("reverbDamping")->load();
+    const auto gain          = parameters.getRawParameterValue ("gain")->load();
+    const auto delayTime     = parameters.getRawParameterValue ("delayTime")->load();
+    const auto delayFeedback = parameters.getRawParameterValue ("delayFeedback")->load();
+    const auto delayMix      = parameters.getRawParameterValue ("delayMix")->load();
+    const auto revMix        = parameters.getRawParameterValue ("reverbMix")->load();
+    const auto room          = parameters.getRawParameterValue ("reverbRoom")->load();
+    const auto damping       = parameters.getRawParameterValue ("reverbDamping")->load();
 
     reverbParams.roomSize = room;
     reverbParams.damping  = damping;
+    reverbParams.wetLevel = revMix;
+    reverbParams.dryLevel = 1.0f - revMix;
     reverb.setParameters (reverbParams);
+
+    const float sr = (float) getSampleRate();
+    const float targetDelay = juce::jlimit (1.0f, maxDelaySamples - 1.0f, delayTime * sr);
+    delaySmoothL.setTargetValue (targetDelay);
+    delaySmoothR.setTargetValue (targetDelay);
 
     const int numSamples  = buffer.getNumSamples();
     const int numChannels = buffer.getNumChannels();
+
+    DelayLineType* lines[2]                 = { &delayLineL, &delayLineR };
+    juce::SmoothedValue<float>* smooths[2]  = { &delaySmoothL, &delaySmoothR };
+
+    for (int ch = 0; ch < numChannels && ch < 2; ++ch)
+    {
+        auto* data = buffer.getWritePointer (ch);
+        auto* line = lines[ch];
+        auto* sm   = smooths[ch];
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            const float in      = data[i];
+            const float delayed = line->pop();
+
+            data[i] = in + delayed * delayMix;
+            line->push (in + delayed * delayFeedback);
+            line->setDelay (sm->getNextValue());
+        }
+    }
 
     float* channels[2] = { nullptr, nullptr };
 
@@ -106,27 +173,23 @@ void MonPremierVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
         reverb.processStereo (channels[0], channels[1], numSamples);
     }
 
-    reverbParams.wetLevel = mix;
-    reverbParams.dryLevel = 1.0f - mix;
-    reverb.setParameters (reverbParams);
-
     buffer.applyGain (gain);
 }
 
-bool MonPremierVSTAudioProcessor::hasEditor() const { return true; }
+bool VSTbyIAAudioProcessor::hasEditor() const { return true; }
 
-juce::AudioProcessorEditor* MonPremierVSTAudioProcessor::createEditor()
+juce::AudioProcessorEditor* VSTbyIAAudioProcessor::createEditor()
 {
-    return new MonPremierVSTAudioProcessorEditor (*this);
+    return new VSTbyIAAudioProcessorEditor (*this);
 }
 
-void MonPremierVSTAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void VSTbyIAAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto xml = parameters.copyState().createXml())
         copyXmlToBinary (*xml, destData);
 }
 
-void MonPremierVSTAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void VSTbyIAAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         parameters.replaceState (juce::ValueTree::fromXml (*xml));
@@ -134,5 +197,5 @@ void MonPremierVSTAudioProcessor::setStateInformation (const void* data, int siz
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new MonPremierVSTAudioProcessor();
+    return new VSTbyIAAudioProcessor();
 }

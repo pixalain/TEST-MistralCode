@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $src = "build/VSTbyIA_artefacts/Release/VST3/VST by IA.vst3"
-          Compress-Archive -Path $src -DestinationPath "VST-by-IA-Windows-v0.4.0.zip" -Force
+          Compress-Archive -Path $src -DestinationPath "VST-by-IA-Windows-v0.5.0.zip" -Force
 
       - name: Install NSIS
         run: choco install nsis -y
@@ -37,17 +37,17 @@ jobs:
         with:
           name: VST-by-IA-Windows
           path: |
-            VST-by-IA-Windows-v0.4.0.zip
-            VST-by-IA-Setup-v0.4.0.exe
+            VST-by-IA-Windows-v0.5.0.zip
+            VST-by-IA-Setup-v0.5.0.exe
 
       - name: Create GitHub Release with binaries
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.4.0
-          name: VST by IA v0.4.0
+          tag_name: v0.5.0
+          name: VST by IA v0.5.0
           files: |
-            VST-by-IA-Windows-v0.4.0.zip
-            VST-by-IA-Setup-v0.4.0.exe
+            VST-by-IA-Windows-v0.5.0.zip
+            VST-by-IA-Setup-v0.5.0.exe
           draft: false
           prerelease: false
