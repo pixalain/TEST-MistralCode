@@ -8,8 +8,8 @@
 - **Android** : autoriser « sources inconnues » puis installer l'APK.
 - **iOS** : dézipper, puis installer sur le simulateur : `xcrun simctl install booted Runner.app` (build non signé ; pour un appareil physique : `flutter build ipa` avec un compte Apple Developer).
 
-Builds produits par la CI : run [#41262141840](https://github.com/pixalain/TEST-MistralCode/actions/runs/41262141840) (Android ✅ iOS ✅).
+Builds produits par la CI : run [#41444856191](https://github.com/pixalain/TEST-MistralCode/actions/runs/41444856191) (Android ✅ iOS ✅).
 
 empreintes SHA-256 :
-- `ferrari-history.apk` : `dc9db44bf43a28ceab98803f144939e437ebb363f3817a5f02508ba1f5958ef2`
-- `ferrari-history-ios.zip` : `6afda744b5e88a112f4d8c05071782cb7b3843ef3ed5dfee084cca8198dd8b35`
+- `ferrari-history.apk` : `9920af3a6d4cbfc64779182c4ab66e4d964bb04c8d011cef83e6077d80a4c3b5`
+- `ferrari-history-ios.zip` : `3ac2e834c6602e820b95d350a05777843fc050f5b3def0ae783ee8466e1d6b52`
