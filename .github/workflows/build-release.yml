@@ -1,0 +1,53 @@
+name: Build VST3 release
+
+on:
+  push:
+    branches: [ main, vibe/mon-premier-vst-1613d1 ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package VST3 as zip
+        shell: pwsh
+        run: |
+          $src = "build/VSTbyIA_artefacts/Release/VST3/VST by IA.vst3"
+          Compress-Archive -Path $src -DestinationPath "VST-by-IA-Windows-v0.5.0.zip" -Force
+
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Build installer with NSIS
+        run: makensis /V2 installer.nsi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VST-by-IA-Windows
+          path: |
+            VST-by-IA-Windows-v0.5.0.zip
+            VST-by-IA-Setup-v0.5.0.exe
+
+      - name: Create GitHub Release with binaries
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.5.0
+          name: VST by IA v0.5.0
+          files: |
+            VST-by-IA-Windows-v0.5.0.zip
+            VST-by-IA-Setup-v0.5.0.exe
+          draft: false
+          prerelease: false

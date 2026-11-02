@@ -1,0 +1,53 @@
+#pragma once
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_dsp/juce_dsp.h>
+
+class VSTbyIAAudioProcessor final : public juce::AudioProcessor
+{
+public:
+    VSTbyIAAudioProcessor();
+    ~VSTbyIAAudioProcessor() override;
+
+    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override;
+
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override;
+
+    const juce::String getName() const override;
+
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
+    double getTailLengthSeconds() const override;
+
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram (int index) override;
+    const juce::String getProgramName (int index) override;
+    void changeProgramName (int index, const juce::String& newName) override;
+
+    void getStateInformation (juce::MemoryBlock& destData) override;
+    void setStateInformation (const void* data, int sizeInBytes) override;
+
+    juce::AudioProcessorValueTreeState parameters;
+
+private:
+    juce::Reverb reverb;
+    juce::Reverb::Parameters reverbParams;
+
+    using DelayLineType = juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange3rd>;
+    static constexpr int maxDelaySamples = 192000;
+
+    DelayLineType delayLineL { (size_t) maxDelaySamples };
+    DelayLineType delayLineR { (size_t) maxDelaySamples };
+    juce::SmoothedValue<float> delaySmoothL;
+    juce::SmoothedValue<float> delaySmoothR;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSTbyIAAudioProcessor)
+};
