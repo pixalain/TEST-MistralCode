@@ -22,8 +22,8 @@ class HomeScreen extends StatelessWidget {
               ),
               child: IntrinsicHeight(
                 child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               const SizedBox(height: 24),
               ClipRRect(
                 borderRadius: BorderRadius.circular(22),
@@ -91,7 +91,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                 ),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
