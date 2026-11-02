@@ -2,9 +2,9 @@
 
 namespace
 {
-constexpr juce::Colour delayAccent  (0xff4da6ff);
-constexpr juce::Colour reverbAccent (0xffff9f43);
-constexpr juce::Colour gainAccent   (0xff6ee86e);
+const juce::Colour delayAccent  (0xff4da6ff);
+const juce::Colour reverbAccent (0xffff9f43);
+const juce::Colour gainAccent   (0xff6ee86e);
 }
 
 VSTbyIAAudioProcessorEditor::VSTbyIAAudioProcessorEditor (VSTbyIAAudioProcessor& p)

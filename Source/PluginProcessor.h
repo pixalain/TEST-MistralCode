@@ -42,10 +42,10 @@ private:
     juce::Reverb::Parameters reverbParams;
 
     using DelayLineType = juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange3rd>;
-    static constexpr float maxDelaySamples = 192000.0f;
+    static constexpr int maxDelaySamples = 192000;
 
-    DelayLineType delayLineL { maxDelaySamples };
-    DelayLineType delayLineR { maxDelaySamples };
+    DelayLineType delayLineL { (size_t) maxDelaySamples };
+    DelayLineType delayLineR { (size_t) maxDelaySamples };
     juce::SmoothedValue<float> delaySmoothL;
     juce::SmoothedValue<float> delaySmoothR;
 

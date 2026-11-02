@@ -93,7 +93,7 @@ void VSTbyIAAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     delayLineL.reset();
     delayLineR.reset();
 
-    const float initialDelay = juce::jlimit (1.0f, maxDelaySamples - 1.0f, 0.35f * (float) sampleRate);
+    const float initialDelay = juce::jlimit (1.0f, (float) maxDelaySamples - 1.0f, 0.35f * (float) sampleRate);
     delaySmoothL.reset (sampleRate, 0.03);
     delaySmoothR.reset (sampleRate, 0.03);
     delaySmoothL.setCurrentAndTargetValue (initialDelay);
@@ -132,7 +132,7 @@ void VSTbyIAAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     reverb.setParameters (reverbParams);
 
     const float sr = (float) getSampleRate();
-    const float targetDelay = juce::jlimit (1.0f, maxDelaySamples - 1.0f, delayTime * sr);
+    const float targetDelay = juce::jlimit (1.0f, (float) maxDelaySamples - 1.0f, delayTime * sr);
     delaySmoothL.setTargetValue (targetDelay);
     delaySmoothR.setTargetValue (targetDelay);
 
@@ -150,12 +150,12 @@ void VSTbyIAAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
 
         for (int i = 0; i < numSamples; ++i)
         {
+            const float delayInSamples = sm->getNextValue();
             const float in      = data[i];
-            const float delayed = line->pop();
+            const float delayed = line->popSample (0, delayInSamples);
 
             data[i] = in + delayed * delayMix;
-            line->push (in + delayed * delayFeedback);
-            line->setDelay (sm->getNextValue());
+            line->pushSample (0, in + delayed * delayFeedback);
         }
     }
 
