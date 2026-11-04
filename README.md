@@ -37,6 +37,15 @@ cd <repo>
 ./gradlew testDebugUnitTest  # tests unitaires
 ```
 
+## 🔒 Sécurité
+- Trafic **HTTPS uniquement** : `usesCleartextTraffic=false` + `network_security_config.xml` (cleartext interdit partout, ancres système uniquement)
+- **Aucune permission dangereuse** : seule `INTERNET` (la permission réseau inutile a été retirée)
+- `allowBackup=false` + règles d'extraction cloud/device vides (aucune donnée sauvegardée)
+- Un seul composant exporté : l'activité launcher (aucun deep link, pas de WebView)
+- Release minifié (R8) + ressources shrinkées ; **logs HTTP uniquement en debug** (`BuildConfig.DEBUG`), jamais en release
+- Signature release via variables d'environnement/CI — **aucun keystore ni mot de passe dans le dépôt** (`.gitignore` : `*.jks`, `f1-signing.properties`)
+- `apksigner verify` OK sur l'APK publié
+
 Stack : Kotlin 2.0, Jetpack Compose + Material 3, Navigation Compose, Retrofit/OkHttp,
 kotlinx.serialization, Coil. AGP 8.7.3, Gradle 8.9, compileSdk 35, minSdk 26.
 
