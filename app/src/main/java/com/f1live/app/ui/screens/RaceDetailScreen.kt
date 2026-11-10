@@ -87,10 +87,12 @@ fun RaceDetailScreen(
 
 @Composable
 private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
+    val gridEntries = gridEntries(detail)
     val legacyTabs = buildList {
         add(DetailTab(R.string.race_tab, null))
         if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
         if (detail.qualifying.isNotEmpty()) add(DetailTab(R.string.qualifying_tab, "QUALI_LEGACY"))
+        if (gridEntries.isNotEmpty()) add(DetailTab(R.string.starting_grid_tab, "GRID"))
     }
     val hasSprint = detail.race.Sprint != null || detail.sprint.isNotEmpty()
     val alphaTabs = detail.alphaSessions
@@ -110,7 +112,9 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
                 s.code
             )
         }
-    val tabs = if (detail.alphaSessions.isNotEmpty()) alphaTabs else legacyTabs
+    val tabs = if (detail.alphaSessions.isNotEmpty()) {
+        if (gridEntries.isNotEmpty()) alphaTabs + DetailTab(R.string.starting_grid_tab, "GRID") else alphaTabs
+    } else legacyTabs
 
     val initialIndex = remember(tabs.size, initialTab) {
         if (initialTab.isBlank()) 0
@@ -138,6 +142,7 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
             null -> ResultsList(detail.race, detail.results)
             "SPRINT_LEGACY" -> ResultsList(detail.race, detail.sprint)
             "QUALI_LEGACY" -> LegacyQualifyingList(detail.race, detail.qualifying)
+            "GRID" -> StartingGridList(detail.race, gridEntries)
             else -> {
                 val session = detail.alphaSessions.firstOrNull { it.code == current.code }
                 if (session == null) {
@@ -148,6 +153,129 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
             }
         }
     }
+}
+
+private data class GridEntry(
+    val pos: Int,
+    val name: String,
+    val code: String?,
+    val team: String,
+    val teamId: String?
+)
+
+private fun gridEntries(detail: RaceDetail): List<GridEntry> {
+    val fromResults = detail.results.mapNotNull { r ->
+        val g = r.grid?.toIntOrNull()
+        if (g != null && g > 0) {
+            GridEntry(
+                g,
+                "${r.Driver.givenName} ${r.Driver.familyName}",
+                r.Driver.code,
+                r.Constructor.name,
+                r.Constructor.constructorId
+            )
+        } else null
+    }
+    if (fromResults.isNotEmpty()) return fromResults.sortedBy { it.pos }
+    return detail.qualifying.mapNotNull { q ->
+        val p = q.position?.toIntOrNull()
+        if (p != null) {
+            GridEntry(
+                p,
+                "${q.Driver.givenName} ${q.Driver.familyName}",
+                q.Driver.code,
+                q.Constructor.name,
+                q.Constructor.constructorId
+            )
+        } else null
+    }.sortedBy { it.pos }
+}
+
+@Composable
+private fun StartingGridList(race: com.f1live.app.data.model.Race, entries: List<GridEntry>) {
+    if (entries.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(R.string.no_results_yet))
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            item {
+                Text(
+                    text = "${race.raceName} — ${stringResource(R.string.starting_grid_tab)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+            items(entries, key = { "grid-${it.pos}" }) { e ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${e.pos}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(30.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(teamColor(e.teamId))
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = (e.code ?: e.name.take(3)).uppercase(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "${e.name} · ${e.team}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GridDelta(grid: Int?, positionText: String) {
+    val pos = positionText.toIntOrNull()
+    if (grid == null || grid <= 0) {
+        Text(
+            text = stringResource(R.string.no_grid),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+    if (pos == null) return
+    val delta = grid - pos
+    val (text, color) = when {
+        delta > 0 -> stringResource(R.string.places_gained, delta) to Color(0xFF2E7D32)
+        delta < 0 -> stringResource(R.string.places_lost, -delta) to Color(0xFFC62828)
+        else -> "=" to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = color
+    )
 }
 
 @Composable
@@ -329,12 +457,15 @@ private fun AlphaRow(row: AlphaResultRow) {
                     )
                 }
             }
-            row.time?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            Column(horizontalAlignment = Alignment.End) {
+                row.time?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                GridDelta(row.gridPosition, row.displayPosition)
             }
         }
     }
@@ -378,12 +509,15 @@ private fun ResultRow(r: Result) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            r.points?.let {
-                Text(
-                    text = "+$it",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (it.toDoubleOrNull() != 0.0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Column(horizontalAlignment = Alignment.End) {
+                r.points?.let {
+                    Text(
+                        text = "+$it",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (it.toDoubleOrNull() != 0.0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                GridDelta(r.grid?.toIntOrNull(), r.displayPosition)
             }
         }
     }

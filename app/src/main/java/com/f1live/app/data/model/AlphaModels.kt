@@ -73,6 +73,7 @@ data class AlphaResultRow(
     val components: Map<String, AlphaComponent>? = null
 ) {
     val displayPosition: String get() = position_text ?: position?.toString() ?: "-"
+    val gridPosition: Int? get() = components?.get("GRID")?.position
 }
 
 @Serializable

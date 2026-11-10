@@ -51,4 +51,9 @@
     <string name="stat_best_championship">Meilleur championnat</string>
     <string name="stat_world_titles">Titres mondiaux</string>
     <string name="recent_results">Derniers résultats</string>
+    <string name="starting_grid_tab">Grille de départ</string>
+    <string name="grid_position">Grille %1$s</string>
+    <string name="places_gained">+%1$d places</string>
+    <string name="places_lost">%1$d places</string>
+    <string name="no_grid">Pit lane</string>
 </resources>
