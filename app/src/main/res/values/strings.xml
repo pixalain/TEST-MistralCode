@@ -56,4 +56,6 @@
     <string name="places_gained">+%1$d places</string>
     <string name="places_lost">%1$d places</string>
     <string name="no_grid">Pit lane</string>
+    <string name="fastest_lap_label">FL %1$s</string>
+    <string name="fastest_lap_of_race">Meilleur tour</string>
 </resources>

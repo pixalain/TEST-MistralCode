@@ -74,6 +74,8 @@ data class AlphaResultRow(
 ) {
     val displayPosition: String get() = position_text ?: position?.toString() ?: "-"
     val gridPosition: Int? get() = components?.get("GRID")?.position
+    val fastestLap: String? get() = components?.get("FLAP")?.time
+    val fastestLapRank: Int? get() = components?.get("FLAP")?.position
 }
 
 @Serializable

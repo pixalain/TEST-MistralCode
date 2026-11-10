@@ -89,9 +89,9 @@ fun RaceDetailScreen(
 private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
     val gridEntries = gridEntries(detail)
     val legacyTabs = buildList {
-        add(DetailTab(R.string.race_tab, null))
-        if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
         if (detail.qualifying.isNotEmpty()) add(DetailTab(R.string.qualifying_tab, "QUALI_LEGACY"))
+        if (detail.sprint.isNotEmpty()) add(DetailTab(R.string.sprint_tab, "SPRINT_LEGACY"))
+        add(DetailTab(R.string.race_tab, null))
         if (gridEntries.isNotEmpty()) add(DetailTab(R.string.starting_grid_tab, "GRID"))
     }
     val hasSprint = detail.race.Sprint != null || detail.sprint.isNotEmpty()
@@ -112,8 +112,20 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
                 s.code
             )
         }
+    val alphaOrdered = alphaTabs.sortedBy { t ->
+        when (t.code) {
+            "FP1" -> 10
+            "FP2" -> 20
+            "FP3" -> 30
+            "SQ" -> 40
+            "SR" -> 50
+            "Q" -> 80
+            "R" -> 90
+            else -> 60
+        }
+    }
     val tabs = if (detail.alphaSessions.isNotEmpty()) {
-        if (gridEntries.isNotEmpty()) alphaTabs + DetailTab(R.string.starting_grid_tab, "GRID") else alphaTabs
+        if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered
     } else legacyTabs
 
     val initialIndex = remember(tabs.size, initialTab) {
@@ -250,6 +262,17 @@ private fun StartingGridList(race: com.f1live.app.data.model.Race, entries: List
             }
         }
     }
+}
+
+@Composable
+private fun FastestLapBadge(time: String?, isRaceFastest: Boolean) {
+    if (time.isNullOrBlank()) return
+    Text(
+        text = stringResource(R.string.fastest_lap_label, time),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = if (isRaceFastest) FontWeight.Bold else FontWeight.Normal,
+        color = if (isRaceFastest) Color(0xFFB388FF) else MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable
@@ -466,6 +489,7 @@ private fun AlphaRow(row: AlphaResultRow) {
                     )
                 }
                 GridDelta(row.gridPosition, row.displayPosition)
+                FastestLapBadge(row.fastestLap, row.fastestLapRank == 1)
             }
         }
     }
@@ -518,6 +542,7 @@ private fun ResultRow(r: Result) {
                     )
                 }
                 GridDelta(r.grid?.toIntOrNull(), r.displayPosition)
+                FastestLapBadge(r.FastestLap?.Time?.time, r.FastestLap?.rank == "1")
             }
         }
     }
