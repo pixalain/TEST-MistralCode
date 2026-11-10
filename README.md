@@ -9,6 +9,7 @@ Application Android (Kotlin + Jetpack Compose) pour suivre la Formule 1 en temps
 - **Onglet « Séances »** : affiche le **GP en cours** (séance « En cours » surlignée) ou à défaut les **dernières séances** du dernier GP — FP1, FP2, FP3, Sprint Qualifs, Sprint, Qualifs, Course, horaires locaux, statut En cours / À venir / Terminée
 - **Détail de chaque GP avec onglets dynamiques** : FP1, FP2, FP3, Qualifs, Sprint Qualifs, Sprint, Course — résultats complets (position, pilote, écurie, meilleur temps, tours) via l'API alpha de Jolpica (`/f1/alpha/results/{round}/{session}/`)
 - **Résultats complets de chaque Grand Prix** (course et sprint), avec temps et points
+- **Onglet « Grille de départ »** dans chaque GP + **places gagnées/perdues** (+3 / -2 / =) à côté de chaque pilote du classement
 
 Les données proviennent de l'API ouverte [Jolpica F1](https://github.com/jolpica/jolpica-f1)
 (successeur de l'API Ergast) : `https://api.jolpi.ca/ergast/f1/current/...`
@@ -63,4 +64,3 @@ app/src/main/java/com/f1live/app/
     ├── screens/                     # Classements, GP, Détail GP
     └── theme/                       # thème Material 3
 ```
-- **Onglet « Grille de départ »** dans chaque GP + **places gagnées/perdues** (+3 / -2 / =) à côté de chaque pilote du classement
