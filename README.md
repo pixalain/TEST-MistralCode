@@ -63,3 +63,4 @@ app/src/main/java/com/f1live/app/
     ├── screens/                     # Classements, GP, Détail GP
     └── theme/                       # thème Material 3
 ```
+- **Onglet « Grille de départ »** dans chaque GP + **places gagnées/perdues** (+3 / -2 / =) à côté de chaque pilote du classement
