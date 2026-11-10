@@ -35,7 +35,6 @@ import com.f1live.app.ui.F1ViewModel
 import com.f1live.app.ui.screens.RaceDetailScreen
 import com.f1live.app.ui.screens.DriverProfileScreen
 import com.f1live.app.ui.screens.RacesScreen
-import com.f1live.app.ui.screens.SessionsScreen
 import com.f1live.app.ui.screens.StandingsScreen
 import com.f1live.app.ui.theme.F1LiveTheme
 
@@ -70,7 +69,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     IconButton(onClick = {
                         when (currentRoute) {
                             "standings" -> viewModel.refreshStandings()
-                            "races", "sessions" -> viewModel.refreshRaces()
+                            "races" -> viewModel.refreshRaces()
                             else -> {}
                         }
                     }) {
@@ -95,12 +94,6 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onClick = { navController.navigate("races") { popUpTo(0) } },
                     icon = { Icon(Icons.Default.Flag, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_races)) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == "sessions",
-                    onClick = { navController.navigate("sessions") { popUpTo(0) } },
-                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_sessions)) }
                 )
             }
         }
@@ -141,15 +134,6 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onRefresh = { viewModel.refreshRaces() },
                     onRaceClick = { race ->
                         navController.navigate("race/${race.round}/")
-                    }
-                )
-            }
-            composable("sessions") {
-                SessionsScreen(
-                    state = racesState,
-                    onRefresh = { viewModel.refreshRaces() },
-                    onRaceClick = { race, tab ->
-                        navController.navigate("race/${race.round}/$tab")
                     }
                 )
             }

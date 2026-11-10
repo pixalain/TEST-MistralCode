@@ -6,7 +6,6 @@ Application Android (Kotlin + Jetpack Compose) pour suivre la Formule 1 en temps
 - **Fiche pilote** en cliquant sur un pilote : nom, âge, nationalité, écurie actuelle, palmarès complet (victoires, poles, podiums, tours rapides, points, saisons, meilleur championnat, titres) et derniers résultats
 - **Classement des écuries** (constructors)
 - **Calendrier de la saison en cours** avec statut Terminé / À venir
-- **Onglet « Séances »** : affiche le **GP en cours** (séance « En cours » surlignée) ou à défaut les **dernières séances** du dernier GP — FP1, FP2, FP3, Sprint Qualifs, Sprint, Qualifs, Course, horaires locaux, statut En cours / À venir / Terminée
 - **Détail de chaque GP avec onglets dynamiques** : FP1, FP2, FP3, Qualifs, Sprint Qualifs, Sprint, Course — résultats complets (position, pilote, écurie, meilleur temps, tours) via l'API alpha de Jolpica (`/f1/alpha/results/{round}/{session}/`)
 - **Résultats complets de chaque Grand Prix** (course et sprint), avec temps et points
 - **Onglet « Grille de départ »** dans chaque GP + **places gagnées/perdues** (+3 / -2 / =) à côté de chaque pilote du classement
