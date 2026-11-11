@@ -21,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -88,6 +89,26 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    var seasonMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                    val season by viewModel.season.collectAsStateWithLifecycle()
+                    val displaySeason = if (season == "current") "…" else season
+                    androidx.compose.material3.TextButton(onClick = { seasonMenu = true }) {
+                        Text(displaySeason, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = seasonMenu,
+                        onDismissRequest = { seasonMenu = false }
+                    ) {
+                        viewModel.availableSeasons.forEach { s ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(s) },
+                                onClick = {
+                                    seasonMenu = false
+                                    viewModel.selectSeason(s)
+                                }
+                            )
+                        }
+                    }
                     IconButton(onClick = {
                         when (currentRoute) {
                             "standings" -> viewModel.refreshStandings()
@@ -156,29 +177,32 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     state = racesState,
                     onRefresh = { viewModel.refreshRaces() },
                     onRaceClick = { race ->
-                        navController.navigate("race/${race.round}/")
+                        val season = (racesState as? com.f1live.app.ui.UiState.Success)?.data?.season ?: "current"
+                        navController.navigate("race/${race.round}/?season=$season")
                     },
                     lastUpdated = lastUpdated
                 )
             }
             composable(
-                route = "race/{round}/{tab}",
+                route = "race/{round}/{tab}?season={season}",
                 arguments = listOf(
                     navArgument("round") { type = NavType.StringType },
-                    navArgument("tab") { type = NavType.StringType; defaultValue = "" }
+                    navArgument("tab") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("season") { type = NavType.StringType; defaultValue = "current" }
                 )
             ) { entry ->
                 val round = entry.arguments?.getString("round") ?: "1"
                 val tab = entry.arguments?.getString("tab").orEmpty()
-                LaunchedEffect(round) { viewModel.loadRace(round) }
+                val season = entry.arguments?.getString("season") ?: "current"
+                LaunchedEffect(round, season) { viewModel.loadRace(round, season) }
                 RaceDetailScreen(
                     round = round,
                     initialTab = tab,
                     state = detailState,
                     liveState = liveState,
                     onBack = { navController.popBackStack() },
-                    onRefresh = { viewModel.loadRace(round) },
-                    onRefreshLive = { viewModel.loadLiveLaps(round, detailState.let { (it as? com.f1live.app.ui.UiState.Success)?.data?.race?.season ?: "2026" }) }
+                    onRefresh = { viewModel.loadRace(round, season) },
+                    onRefreshLive = { viewModel.loadLiveLaps(round, detailState.let { (it as? com.f1live.app.ui.UiState.Success)?.data?.race?.season ?: season }) }
                 )
             }
         }

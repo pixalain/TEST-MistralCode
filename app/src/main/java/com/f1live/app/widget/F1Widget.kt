@@ -53,7 +53,7 @@ fun loadWidgetData(context: Context): WidgetData {
     var nextRaceWhen: String? = null
     var top3: List<String> = emptyList()
     try {
-        cache.load(F1Cache.KEY_SCHEDULE)?.let { (raw, _) ->
+        cache.load(F1Cache.KEY_SCHEDULE + "_current")?.let { (raw, _) ->
             val data = F1Json.races(Json.parseToJsonElement(raw).jsonObject)
             val now = System.currentTimeMillis()
             val next: Race? = data.raceTable.Races

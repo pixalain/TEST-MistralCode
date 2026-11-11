@@ -38,11 +38,30 @@ interface JolpicaService {
     @GET("ergast/f1/current/constructorStandings.json")
     suspend fun constructorStandings(@Query("limit") limit: Int = 100): JsonObject
 
+    @GET("ergast/f1/{season}/constructorStandings.json")
+    suspend fun seasonConstructorStandings(
+        @Path("season") season: String,
+        @Query("limit") limit: Int = 100
+    ): JsonObject
+
     @GET("ergast/f1/current.json")
     suspend fun seasonSchedule(@Query("limit") limit: Int = 100): JsonObject
 
+    @GET("ergast/f1/{season}.json")
+    suspend fun seasonScheduleFor(
+        @Path("season") season: String,
+        @Query("limit") limit: Int = 100
+    ): JsonObject
+
     @GET("ergast/f1/current/{round}/results.json")
     suspend fun raceResults(
+        @Path("round") round: String,
+        @Query("limit") limit: Int = 100
+    ): JsonObject
+
+    @GET("ergast/f1/{season}/{round}/results.json")
+    suspend fun seasonRaceResults(
+        @Path("season") season: String,
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
     ): JsonObject
@@ -53,11 +72,28 @@ interface JolpicaService {
         @Query("limit") limit: Int = 100
     ): JsonObject
 
+    @GET("ergast/f1/{season}/{round}/sprint.json")
+    suspend fun seasonSprintResults(
+        @Path("season") season: String,
+        @Path("round") round: String,
+        @Query("limit") limit: Int = 100
+    ): JsonObject
+
     @GET("ergast/f1/current/{round}/qualifying.json")
     suspend fun qualifyingResults(
         @Path("round") round: String,
         @Query("limit") limit: Int = 100
     ): JsonObject
+
+    @GET("ergast/f1/{season}/{round}/qualifying.json")
+    suspend fun seasonQualifyingResults(
+        @Path("season") season: String,
+        @Path("round") round: String,
+        @Query("limit") limit: Int = 100
+    ): JsonObject
+
+    @GET("ergast/f1/seasons.json")
+    suspend fun seasons(@Query("limit") limit: Int = 100): JsonObject
 
     @GET("ergast/f1/drivers/{driverId}.json")
     suspend fun driverInfo(@Path("driverId") driverId: String): JsonObject

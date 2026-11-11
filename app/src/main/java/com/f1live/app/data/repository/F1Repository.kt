@@ -85,11 +85,14 @@ class F1Repository(
     private val cache: F1Cache? = null
 ) {
 
-    suspend fun driverStandings(): Cached<Pair<String, List<DriverStanding>>> {
+    suspend fun driverStandings(season: String = "current"): Cached<Pair<String, List<DriverStanding>>> {
+        val key = F1Cache.KEY_STANDINGS + "_" + season
         val raw = try {
-            withRetry429 { service.driverStandings() }
+            withRetry429 {
+                if (season == "current") service.driverStandings() else service.seasonDriverStandings(season)
+            }
         } catch (e: Exception) {
-            val cached = cache?.load(F1Cache.KEY_STANDINGS)
+            val cached = cache?.load(key)
                 ?: throw e
             val data = F1Json.driverStandings(
                 kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
@@ -101,17 +104,20 @@ class F1Repository(
                 cachedAt = cached.second
             )
         }
-        cache?.save(F1Cache.KEY_STANDINGS, raw.toString())
+        cache?.save(key, raw.toString())
         val data = F1Json.driverStandings(raw)
         val table = data.standingsTable
         return Cached(table.season to (table.StandingsLists.firstOrNull()?.DriverStandings.orEmpty()), fromCache = false)
     }
 
-    suspend fun constructorStandings(): Cached<Pair<String, List<ConstructorStanding>>> {
+    suspend fun constructorStandings(season: String = "current"): Cached<Pair<String, List<ConstructorStanding>>> {
+        val key = F1Cache.KEY_CONSTRUCTORS + "_" + season
         val raw = try {
-            withRetry429 { service.constructorStandings() }
+            withRetry429 {
+                if (season == "current") service.constructorStandings() else service.seasonConstructorStandings(season)
+            }
         } catch (e: Exception) {
-            val cached = cache?.load(F1Cache.KEY_CONSTRUCTORS) ?: throw e
+            val cached = cache?.load(key) ?: throw e
             val data = F1Json.constructorStandings(
                 kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
             )
@@ -122,23 +128,26 @@ class F1Repository(
                 cachedAt = cached.second
             )
         }
-        cache?.save(F1Cache.KEY_CONSTRUCTORS, raw.toString())
+        cache?.save(key, raw.toString())
         val data = F1Json.constructorStandings(raw)
         val table = data.standingsTable
         return Cached(table.season to (table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()), fromCache = false)
     }
 
-    suspend fun seasonSchedule(): Cached<Pair<String, List<Race>>> {
+    suspend fun seasonSchedule(season: String = "current"): Cached<Pair<String, List<Race>>> {
+        val key = F1Cache.KEY_SCHEDULE + "_" + season
         val raw = try {
-            withRetry429 { service.seasonSchedule() }
+            withRetry429 {
+                if (season == "current") service.seasonSchedule() else service.seasonScheduleFor(season)
+            }
         } catch (e: Exception) {
-            val cached = cache?.load(F1Cache.KEY_SCHEDULE) ?: throw e
+            val cached = cache?.load(key) ?: throw e
             val data = F1Json.races(
                 kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
             )
             return Cached(data.raceTable.season to data.raceTable.Races, fromCache = true, cachedAt = cached.second)
         }
-        cache?.save(F1Cache.KEY_SCHEDULE, raw.toString())
+        cache?.save(key, raw.toString())
         val data = F1Json.races(raw)
         return Cached(data.raceTable.season to data.raceTable.Races, fromCache = false)
     }
@@ -186,11 +195,14 @@ class F1Repository(
         null
     }
 
-    suspend fun raceResults(round: String): Cached<RaceDetail> = coroutineScope {
+    suspend fun raceResults(round: String, season: String = "current"): Cached<RaceDetail> = coroutineScope {
+        val key = F1Cache.raceKey(season, round)
         val raw = try {
-            withRetry429 { service.raceResults(round) }
+            withRetry429 {
+                if (season == "current") service.raceResults(round) else service.seasonRaceResults(season, round)
+            }
         } catch (e: Exception) {
-            val cached = cache?.load(F1Cache.raceKey(round)) ?: throw e
+            val cached = cache?.load(key) ?: throw e
             val detail = F1Json.json.decodeFromString(kotlinx.serialization.serializer<RaceDetail>(), cached.first)
             return@coroutineScope Cached(detail, fromCache = true, cachedAt = cached.second)
         }
@@ -201,7 +213,7 @@ class F1Repository(
 
         val sprintDeferred = async {
             try {
-                F1Json.races(service.sprintResults(round)).raceTable.Races.firstOrNull()
+                F1Json.races(if (season == "current") service.sprintResults(round) else service.seasonSprintResults(season, round)).raceTable.Races.firstOrNull()
                     ?.sprintResults.orEmpty()
             } catch (e: Exception) {
                 emptyList<Result>()
@@ -209,7 +221,7 @@ class F1Repository(
         }
         val qualifyingDeferred = async {
             try {
-                F1Json.races(service.qualifyingResults(round)).raceTable.Races.firstOrNull()
+                F1Json.races(if (season == "current") service.qualifyingResults(round) else service.seasonQualifyingResults(season, round)).raceTable.Races.firstOrNull()
                     ?.QualifyingResults.orEmpty()
             } catch (e: Exception) {
                 emptyList<QualifyingResult>()
@@ -247,7 +259,7 @@ class F1Repository(
             alphaSessions = alphaDeferred.await()
         )
         runCatching {
-            cache?.save(F1Cache.raceKey(round), F1Json.json.encodeToString(kotlinx.serialization.serializer<RaceDetail>(), detail))
+            cache?.save(key, F1Json.json.encodeToString(kotlinx.serialization.serializer<RaceDetail>(), detail))
         }
         Cached(detail, fromCache = false)
     }

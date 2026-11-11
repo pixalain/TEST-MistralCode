@@ -31,6 +31,6 @@ class F1Cache(context: Context) {
         const val KEY_STANDINGS = "standings"
         const val KEY_CONSTRUCTORS = "constructors"
         const val KEY_SCHEDULE = "schedule"
-        fun raceKey(round: String) = "race_$round"
+        fun raceKey(season: String, round: String) = "race_${season}_$round"
     }
 }

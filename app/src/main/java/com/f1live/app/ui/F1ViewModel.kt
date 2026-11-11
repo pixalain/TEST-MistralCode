@@ -58,7 +58,20 @@ class F1ViewModel(
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated.asStateFlow()
 
+    private val _season = MutableStateFlow("current")
+    val season: StateFlow<String> = _season.asStateFlow()
+
+    val availableSeasons: List<String> =
+        (java.time.Year.now().value downTo 2018).map { it.toString() }
+
     init {
+        refreshStandings()
+        refreshRaces()
+    }
+
+    fun selectSeason(season: String) {
+        if (season == _season.value) return
+        _season.value = season
         refreshStandings()
         refreshRaces()
     }
@@ -67,15 +80,16 @@ class F1ViewModel(
         _standings.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val driversDeferred = async { repository.driverStandings() }
-                val constructorsDeferred = async { repository.constructorStandings() }
+                val season = _season.value
+                val driversDeferred = async { repository.driverStandings(season) }
+                val constructorsDeferred = async { repository.constructorStandings(season) }
                 val drivers = driversDeferred.await()
                 val constructors = constructorsDeferred.await()
-                val season = drivers.data.first.ifBlank { constructors.data.first }
+                val standingsSeason = drivers.data.first.ifBlank { constructors.data.first }
                 val fromCache = drivers.fromCache || constructors.fromCache
                 _standings.value = UiState.Success(
                     StandingsUi(
-                        season = season,
+                        season = standingsSeason,
                         drivers = drivers.data.second,
                         constructors = constructors.data.second
                     ),
@@ -94,7 +108,10 @@ class F1ViewModel(
         _races.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.seasonSchedule()
+                val result = repository.seasonSchedule(_season.value)
+                if (_season.value == "current" && result.data.first.isNotBlank()) {
+                    _season.value = result.data.first
+                }
                 val (season, races) = result.data
                 _races.value = UiState.Success(RacesUi(season, races), fromCache = result.fromCache)
                 _lastUpdated.value = if (result.fromCache) result.cachedAt else System.currentTimeMillis()
@@ -133,11 +150,11 @@ class F1ViewModel(
         }
     }
 
-    fun loadRace(round: String) {
+    fun loadRace(round: String, season: String = _season.value) {
         _raceDetail.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.raceResults(round)
+                val result = repository.raceResults(round, season)
                 _raceDetail.value = UiState.Success(result.data, fromCache = result.fromCache)
                 _lastUpdated.value = if (result.fromCache) result.cachedAt else System.currentTimeMillis()
             } catch (e: Exception) {
