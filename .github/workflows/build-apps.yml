@@ -32,8 +32,30 @@ jobs:
       - name: Lancer les tests
         run: flutter test
 
-      - name: Construire l'APK Android (release)
+      - name: Préparer la clé de signature release (générée à la volée, jamais stockée)
+        run: |
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /tmp/release.key -out /tmp/release.crt -days 9125 \
+            -subj "/C=FR/O=Ferrari History Fan Project/CN=Ferrari History"
+          openssl pkcs12 -export -inkey /tmp/release.key -in /tmp/release.crt \
+            -out /tmp/release.p12 -name ferrari-history-release \
+            -passout pass:ferrari-release-2025
+          echo "KEYSTORE_PATH=/tmp/release.p12" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=ferrari-release-2025" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=ferrari-release-2025" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=ferrari-history-release" >> "$GITHUB_ENV"
+
+      - name: Construire l'APK Android (release, signé v1+v2+v3)
         run: flutter build apk --release
+
+      - name: Vérifier la signature de l'APK (sécurité Android)
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          echo "== apksigner verify --verbose =="
+          "$APKSIGNER" verify --verbose "$APK"
+          echo "== certificats =="
+          "$APKSIGNER" verify --print-certs "$APK"
 
       - name: Publier l'APK en artefact (lien de téléchargement Android)
         uses: actions/upload-artifact@v4

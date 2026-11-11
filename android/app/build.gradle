@@ -1,13 +1,21 @@
+import java.util.Properties
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withInputStream { localProperties.load(it) }
+    localProperties.withInputStream { localProperties.load(it) }
 }
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
@@ -29,15 +37,42 @@ android {
 
     defaultConfig {
         applicationId = "com.pixalain.ferrari_history"
-        minSdk = flutter.minSdkVersion
+        // minSdk 21 = compatible Android 5.0+ (le plus large parc possible)
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            if (System.getenv("KEYSTORE_PATH") != null) {
+                storeFile file(System.getenv("KEYSTORE_PATH"))
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            } else if (keystoreProperties.getProperty("storeFile") != null) {
+                storeFile file(keystoreProperties.getProperty("storeFile"))
+                storePassword keystoreProperties.getProperty("storePassword")
+                keyAlias keystoreProperties.getProperty("keyAlias")
+                keyPassword keystoreProperties.getProperty("keyPassword")
+            }
+            // Signatures v1 + v2 + v3 obligatoires pour Android moderne (11+ exige v2)
+            v1SigningEnabled true
+            v2SigningEnabled true
+            v3SigningEnabled true
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release
+            // Pas de debug, shrink OK
+            minifyEnabled false
+            shrinkResources false
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }
