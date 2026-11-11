@@ -9,13 +9,13 @@ plugins {
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
-    localProperties.withInputStream { localProperties.load(it) }
+    localPropertiesFile.withInputStream { localProperties.load(it) }
 }
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
