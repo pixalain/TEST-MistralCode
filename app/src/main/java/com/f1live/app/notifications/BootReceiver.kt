@@ -27,7 +27,7 @@ private suspend fun updateWidgets(context: Context) {
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
-        com.f1live.app.F1App.scheduleWidgetRefresh(context)
+        com.f1live.app.F1LiveApp.scheduleWidgetRefresh(context)
         val cached = F1Cache(context).load(F1Cache.KEY_SCHEDULE + "_current")?.first
         if (cached == null) {
             CoroutineScope(Dispatchers.IO).launch {

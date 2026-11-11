@@ -4,10 +4,17 @@ import android.app.Application
 import android.content.Context
 import com.f1live.app.notifications.ensureNotificationChannel
 
-class F1App : Application() {
+class F1LiveApp : Application() {
     override fun onCreate() {
         super.onCreate()
         ensureNotificationChannel(this)
+        // Explicit init: safe even if the androidx.startup initializer also runs
+        runCatching {
+            androidx.work.WorkManager.initialize(
+                this,
+                androidx.work.Configuration.Builder().build()
+            )
+        }
         scheduleWidgetRefresh(this)
     }
 
