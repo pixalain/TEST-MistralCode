@@ -19,9 +19,12 @@
 # Jetpack Compose: keep everything referenced from composable functions
 -keep class androidx.compose.** { *; }
 -keep class kotlin.Metadata { *; }
--keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod, RuntimeVisibleAnnotations
 -keepclassmembers class * {
     @androidx.compose.runtime.Composable <methods>;
 }
 -keep @androidx.compose.runtime.Composable class * { *; }
+-keepclasseswithmembers class * {
+    @androidx.compose.runtime.Composable <methods>;
+}
 -dontwarn androidx.compose.**
