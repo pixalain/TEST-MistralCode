@@ -57,10 +57,10 @@ android {
                 keyAlias keystoreProperties.getProperty("keyAlias")
                 keyPassword keystoreProperties.getProperty("keyPassword")
             }
-            // Signatures v1 + v2 + v3 obligatoires pour Android moderne (11+ exige v2)
+            // Signatures v1 + v2 obligatoires (Android 11+ exige v2) ; v3 activé par défaut par AGP
             v1SigningEnabled true
             v2SigningEnabled true
-            v3SigningEnabled true
+            enableV3Signing true
         }
     }
 
