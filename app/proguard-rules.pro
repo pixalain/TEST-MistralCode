@@ -15,3 +15,13 @@
 -dontwarn retrofit2.**
 -dontwarn okhttp3.**
 -dontwarn okio.**
+
+# Jetpack Compose: keep everything referenced from composable functions
+-keep class androidx.compose.** { *; }
+-keep class kotlin.Metadata { *; }
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
+-keepclassmembers class * {
+    @androidx.compose.runtime.Composable <methods>;
+}
+-keep @androidx.compose.runtime.Composable class * { *; }
+-dontwarn androidx.compose.**
