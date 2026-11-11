@@ -57,8 +57,10 @@ fun RaceDetailScreen(
     round: String,
     initialTab: String = "",
     state: UiState<RaceDetail>,
+    liveState: UiState<com.f1live.app.data.repository.LiveLaps> = UiState.Loading,
     onBack: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onRefreshLive: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -79,14 +81,98 @@ fun RaceDetailScreen(
             when (state) {
                 is UiState.Loading -> LoadingBox()
                 is UiState.Error -> ErrorBox(state.message, onRefresh)
-                is UiState.Success -> DetailContent(state.data, initialTab)
+                is UiState.Success -> DetailContent(state.data, initialTab, round, liveState, onRefreshLive)
             }
         }
     }
 }
 
 @Composable
-private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
+private fun LiveTab(round: String, onRefreshLive: () -> Unit) {
+    androidx.compose.runtime.LaunchedEffect(round) { onRefreshLive() }
+    androidx.compose.runtime.LaunchedEffect(round) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000L)
+            onRefreshLive()
+        }
+    }
+}
+
+@Composable
+fun LiveLapsContent(liveState: UiState<com.f1live.app.data.repository.LiveLaps>) {
+    when (liveState) {
+        is UiState.Loading -> LoadingBox()
+        is UiState.Error -> ErrorBox(liveState.message) {}
+        is UiState.Success -> {
+            val live = liveState.data
+            LazyColumn(
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item {
+                    Text(
+                        text = "🔴 Live — tour ${live.lastLap}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                items(live.rows, key = { "live-${it.position}" }) { row ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${row.position}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.width(30.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = row.driverCode.uppercase(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                if (row.teamName.isNotBlank()) {
+                                    Text(
+                                        text = row.teamName,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            if (row.isFastest) {
+                                Text(text = "🏁", style = MaterialTheme.typography.labelLarge)
+                            }
+                            row.lapTime?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (row.isFastest) Color(0xFFB388FF) else MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailContent(
+    detail: RaceDetail,
+    initialTab: String = "",
+    round: String = "",
+    liveState: UiState<com.f1live.app.data.repository.LiveLaps> = UiState.Loading,
+    onRefreshLive: () -> Unit = {}
+) {
     val gridEntries = gridEntries(detail)
     val legacyTabs = buildList {
         if (detail.qualifying.isNotEmpty()) add(DetailTab(R.string.qualifying_tab, "QUALI_LEGACY"))
@@ -124,9 +210,12 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
             else -> 60
         }
     }
+    val hasRace = detail.alphaSessions.any { it.code == "R" && it.rows.isNotEmpty() } || detail.results.isNotEmpty()
+    val liveTab = if (hasRace) DetailTab(R.string.live_tab, "LIVE") else null
     val tabs = if (detail.alphaSessions.isNotEmpty()) {
-        if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered
-    } else legacyTabs
+        (if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered) +
+            listOfNotNull(liveTab)
+    } else legacyTabs + listOfNotNull(liveTab)
 
     val initialIndex = remember(tabs.size, initialTab) {
         if (initialTab.isBlank()) 0
@@ -155,6 +244,10 @@ private fun DetailContent(detail: RaceDetail, initialTab: String = "") {
             "SPRINT_LEGACY" -> ResultsList(detail.race, detail.sprint)
             "QUALI_LEGACY" -> LegacyQualifyingList(detail.race, detail.qualifying)
             "GRID" -> StartingGridList(detail.race, gridEntries)
+            "LIVE" -> {
+                LiveTab(round, onRefreshLive)
+                LiveLapsContent(liveState)
+            }
             else -> {
                 val session = detail.alphaSessions.firstOrNull { it.code == current.code }
                 if (session == null) {

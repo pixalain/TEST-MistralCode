@@ -37,6 +37,12 @@ cd <repo>
 ./gradlew testDebugUnitTest  # tests unitaires
 ```
 
+## 🆕 Widget & Live
+- **Widget d'accueil** (Glance) : prochain GP (nom, circuit, date/heure locale) + top 3 du championnat, rafraîchi toutes les 15 min via WorkManager et au boot
+- **Onglet « Live »** dans le détail du GP quand la course a des résultats : classement au dernier tour avec temps de tour, 🏁 meilleur tour, auto-refresh 30 s
+- **Cache hors-ligne** : classements/calendrier/détail GP conservés localement avec badge « Mis à jour à … » / « ⚠ Hors ligne — données du … »
+- **Notifications** : rappels 30 min avant FP1, Qualifs, Sprint et Course (WorkManager, reprogrammés au boot)
+
 ## 🔒 Sécurité
 - Trafic **HTTPS uniquement** : `usesCleartextTraffic=false` + `network_security_config.xml` (cleartext interdit partout, ancres système uniquement)
 - **Aucune permission dangereuse** : seule `INTERNET` (la permission réseau inutile a été retirée)

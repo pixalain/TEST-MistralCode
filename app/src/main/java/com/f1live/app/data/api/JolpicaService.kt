@@ -1,6 +1,7 @@
 package com.f1live.app.data.api
 
 import com.f1live.app.data.model.AlphaEnvelope
+import com.f1live.app.data.model.AlphaLapsData
 import com.f1live.app.data.model.AlphaResultRow
 import com.f1live.app.data.model.AlphaResultsIndex
 import com.f1live.app.data.model.AlphaRound
@@ -102,6 +103,9 @@ interface AlphaService {
         @Path("roundId") roundId: String,
         @Path("code") code: String
     ): AlphaEnvelope<AlphaSessionResults>
+
+    @GET("f1/alpha/laps/{roundId}/R/")
+    suspend fun raceLaps(@Path("roundId") roundId: String): AlphaEnvelope<AlphaLapsData>
 }
 
 object ApiClient {

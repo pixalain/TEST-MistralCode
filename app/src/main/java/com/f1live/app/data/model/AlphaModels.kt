@@ -104,3 +104,20 @@ data class AlphaComponent(
     val position: Int? = null,
     val time: String? = null
 )
+
+@Serializable
+data class AlphaLapsData(
+    val laps: List<AlphaLap> = emptyList(),
+    val drivers_by_id: Map<String, AlphaDriver> = emptyMap(),
+    val teams_by_id: Map<String, AlphaTeam> = emptyMap()
+)
+
+@Serializable
+data class AlphaLap(
+    val number: Int = 0,
+    val position: Int = 0,
+    val time_display: String? = null,
+    val is_entry_fastest_lap: Boolean = false,
+    val driver_id: String? = null,
+    val team_id: String? = null
+)

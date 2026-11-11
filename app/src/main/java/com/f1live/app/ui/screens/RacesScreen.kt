@@ -52,7 +52,8 @@ fun formatRaceDate(iso: String): String = try {
 fun RacesScreen(
     state: UiState<RacesUi>,
     onRefresh: () -> Unit,
-    onRaceClick: (Race) -> Unit
+    onRaceClick: (Race) -> Unit,
+    lastUpdated: Long? = null
 ) {
     when (state) {
         is UiState.Loading -> LoadingBox()
@@ -70,6 +71,7 @@ fun RacesScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
+                    FreshnessBadge(state.fromCache, lastUpdated)
                 }
                 items(state.data.races, key = { it.round }) { race ->
                     val raceDate = runCatching { LocalDate.parse(race.date) }.getOrNull()

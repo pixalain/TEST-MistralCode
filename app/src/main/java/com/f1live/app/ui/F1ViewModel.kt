@@ -1,6 +1,7 @@
 package com.f1live.app.ui
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.f1live.app.data.model.ConstructorStanding
 import com.f1live.app.data.model.DriverStanding
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 
 sealed interface UiState<out T> {
     data object Loading : UiState<Nothing>
-    data class Success<T>(val data: T) : UiState<T>
+    data class Success<T>(val data: T, val fromCache: Boolean = false) : UiState<T>
     data class Error(val message: String) : UiState<Nothing>
 }
 
@@ -34,8 +35,10 @@ data class RacesUi(
 )
 
 class F1ViewModel(
-    private val repository: F1Repository = F1Repository()
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val repository: F1Repository = F1Repository(cache = com.f1live.app.data.repository.F1Cache(application))
 
     private val _standings = MutableStateFlow<UiState<StandingsUi>>(UiState.Loading)
     val standings: StateFlow<UiState<StandingsUi>> = _standings.asStateFlow()
@@ -48,6 +51,9 @@ class F1ViewModel(
 
     private val _driverProfile = MutableStateFlow<UiState<DriverProfile>>(UiState.Loading)
     val driverProfile: StateFlow<UiState<DriverProfile>> = _driverProfile.asStateFlow()
+
+    private val _liveLaps = MutableStateFlow<UiState<com.f1live.app.data.repository.LiveLaps>>(UiState.Loading)
+    val liveLaps: StateFlow<UiState<com.f1live.app.data.repository.LiveLaps>> = _liveLaps.asStateFlow()
 
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated.asStateFlow()
@@ -65,15 +71,19 @@ class F1ViewModel(
                 val constructorsDeferred = async { repository.constructorStandings() }
                 val drivers = driversDeferred.await()
                 val constructors = constructorsDeferred.await()
-                val season = drivers.first.ifBlank { constructors.first }
+                val season = drivers.data.first.ifBlank { constructors.data.first }
+                val fromCache = drivers.fromCache || constructors.fromCache
                 _standings.value = UiState.Success(
                     StandingsUi(
                         season = season,
-                        drivers = drivers.second,
-                        constructors = constructors.second
-                    )
+                        drivers = drivers.data.second,
+                        constructors = constructors.data.second
+                    ),
+                    fromCache = fromCache
                 )
-                _lastUpdated.value = System.currentTimeMillis()
+                _lastUpdated.value = if (fromCache) {
+                    maxOf(drivers.cachedAt, constructors.cachedAt)
+                } else System.currentTimeMillis()
             } catch (e: Exception) {
                 _standings.value = UiState.Error(e.message ?: "Erreur inconnue")
             }
@@ -84,9 +94,10 @@ class F1ViewModel(
         _races.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val (season, races) = repository.seasonSchedule()
-                _races.value = UiState.Success(RacesUi(season, races))
-                _lastUpdated.value = System.currentTimeMillis()
+                val result = repository.seasonSchedule()
+                val (season, races) = result.data
+                _races.value = UiState.Success(RacesUi(season, races), fromCache = result.fromCache)
+                _lastUpdated.value = if (result.fromCache) result.cachedAt else System.currentTimeMillis()
             } catch (e: Exception) {
                 _races.value = UiState.Error(e.message ?: "Erreur inconnue")
             }
@@ -112,12 +123,23 @@ class F1ViewModel(
         }
     }
 
+    fun loadLiveLaps(round: String, season: String) {
+        viewModelScope.launch {
+            try {
+                _liveLaps.value = UiState.Success(repository.liveLaps(round, season))
+            } catch (e: Exception) {
+                _liveLaps.value = UiState.Error(e.message ?: "Erreur live")
+            }
+        }
+    }
+
     fun loadRace(round: String) {
         _raceDetail.value = UiState.Loading
         viewModelScope.launch {
             try {
-                _raceDetail.value = UiState.Success(repository.raceResults(round))
-                _lastUpdated.value = System.currentTimeMillis()
+                val result = repository.raceResults(round)
+                _raceDetail.value = UiState.Success(result.data, fromCache = result.fromCache)
+                _lastUpdated.value = if (result.fromCache) result.cachedAt else System.currentTimeMillis()
             } catch (e: Exception) {
                 val msg = when {
                     e is retrofit2.HttpException && e.code() == 429 ->

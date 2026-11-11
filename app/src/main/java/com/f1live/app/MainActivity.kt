@@ -57,6 +57,28 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val racesState by viewModel.races.collectAsStateWithLifecycle()
     val detailState by viewModel.raceDetail.collectAsStateWithLifecycle()
     val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
+    val liveState by viewModel.liveLaps.collectAsStateWithLifecycle()
+    val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    // (Re)schedule session reminders whenever the schedule is (re)loaded
+    LaunchedEffect(racesState) {
+        val s = racesState
+        if (s is com.f1live.app.ui.UiState.Success) {
+            com.f1live.app.notifications.scheduleSessionReminders(context, s.data.races)
+        }
+    }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -109,7 +131,8 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onRefresh = { viewModel.refreshStandings() },
                     onDriverClick = { driverId, team ->
                         navController.navigate("driver/$driverId?team=$team")
-                    }
+                    },
+                    lastUpdated = lastUpdated
                 )
             }
             composable(
@@ -134,7 +157,8 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onRefresh = { viewModel.refreshRaces() },
                     onRaceClick = { race ->
                         navController.navigate("race/${race.round}/")
-                    }
+                    },
+                    lastUpdated = lastUpdated
                 )
             }
             composable(
@@ -151,8 +175,10 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     round = round,
                     initialTab = tab,
                     state = detailState,
+                    liveState = liveState,
                     onBack = { navController.popBackStack() },
-                    onRefresh = { viewModel.loadRace(round) }
+                    onRefresh = { viewModel.loadRace(round) },
+                    onRefreshLive = { viewModel.loadLiveLaps(round, detailState.let { (it as? com.f1live.app.ui.UiState.Success)?.data?.race?.season ?: "2026" }) }
                 )
             }
         }

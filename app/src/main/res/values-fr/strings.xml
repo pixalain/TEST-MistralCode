@@ -55,4 +55,16 @@
     <string name="no_grid">Pit lane</string>
     <string name="fastest_lap_label">TR %1$s</string>
     <string name="fastest_lap_of_race">Meilleur tour</string>
+    <string name="updated_at">Mis à jour à %1$s</string>
+    <string name="offline_cached">⚠ Hors ligne — données du %1$s à %2$s</string>
+    <string name="notif_channel_sessions">Rappels de séances</string>
+    <string name="notif_channel_sessions_desc">Rappels 30 min avant les essais, qualifications, sprint et course</string>
+    <string name="notif_session_title">%1$s — %2$s</string>
+    <string name="notif_session_text">La séance commence dans 30 min (%1$s)</string>
+    <string name="enable_notifications">Activer les notifications</string>
+    <string name="live_tab">Live</string>
+    <string name="widget_next_gp">Prochain GP</string>
+    <string name="widget_top3">Top 3 championnat</string>
+    <string name="widget_no_data">Ouvrez l\'app pour charger les données</string>
+    <string name="widget_description">Prochain Grand Prix et top 3 du championnat</string>
 </resources>

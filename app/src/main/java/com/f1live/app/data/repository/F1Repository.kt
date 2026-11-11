@@ -11,11 +11,13 @@ import com.f1live.app.data.model.DriverStanding
 import com.f1live.app.data.model.QualifyingResult
 import com.f1live.app.data.model.Race
 import com.f1live.app.data.model.Result
+import kotlinx.serialization.json.jsonObject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
+@kotlinx.serialization.Serializable
 data class SessionResults(
     val code: String,
     val title: String,
@@ -23,6 +25,7 @@ data class SessionResults(
     val rows: List<AlphaResultRow>
 )
 
+@kotlinx.serialization.Serializable
 data class RaceDetail(
     val race: Race,
     val results: List<Result>,
@@ -31,6 +34,7 @@ data class RaceDetail(
     val alphaSessions: List<SessionResults> = emptyList()
 )
 
+@kotlinx.serialization.Serializable
 data class DriverStats(
     val races: Int = 0,
     val wins: Int = 0,
@@ -47,33 +51,96 @@ data class DriverStats(
     val sprintPoints: Double = 0.0
 )
 
+@kotlinx.serialization.Serializable
 data class DriverProfile(
     val driver: Driver,
     val stats: DriverStats
 )
 
+@kotlinx.serialization.Serializable
+data class LiveLapRow(
+    val position: Int,
+    val driverCode: String,
+    val driverName: String,
+    val teamName: String,
+    val lapTime: String?,
+    val isFastest: Boolean
+)
+
+@kotlinx.serialization.Serializable
+data class LiveLaps(
+    val round: String,
+    val raceName: String,
+    val lastLap: Int,
+    val rows: List<LiveLapRow>
+)
+
+
+
+data class Cached<T>(val data: T, val fromCache: Boolean, val cachedAt: Long = 0L)
+
 class F1Repository(
     private val service: JolpicaService = ApiClient.service,
-    private val alpha: AlphaService = ApiClient.alpha
+    private val alpha: AlphaService = ApiClient.alpha,
+    private val cache: F1Cache? = null
 ) {
 
-    suspend fun driverStandings(): Pair<String, List<DriverStanding>> {
-        val data = F1Json.driverStandings(service.driverStandings())
+    suspend fun driverStandings(): Cached<Pair<String, List<DriverStanding>>> {
+        val raw = try {
+            withRetry429 { service.driverStandings() }
+        } catch (e: Exception) {
+            val cached = cache?.load(F1Cache.KEY_STANDINGS)
+                ?: throw e
+            val data = F1Json.driverStandings(
+                kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
+            )
+            val table = data.standingsTable
+            return Cached(
+                table.season to (table.StandingsLists.firstOrNull()?.DriverStandings.orEmpty()),
+                fromCache = true,
+                cachedAt = cached.second
+            )
+        }
+        cache?.save(F1Cache.KEY_STANDINGS, raw.toString())
+        val data = F1Json.driverStandings(raw)
         val table = data.standingsTable
-        val list = table.StandingsLists.firstOrNull()?.DriverStandings.orEmpty()
-        return table.season to list
+        return Cached(table.season to (table.StandingsLists.firstOrNull()?.DriverStandings.orEmpty()), fromCache = false)
     }
 
-    suspend fun constructorStandings(): Pair<String, List<ConstructorStanding>> {
-        val data = F1Json.constructorStandings(service.constructorStandings())
+    suspend fun constructorStandings(): Cached<Pair<String, List<ConstructorStanding>>> {
+        val raw = try {
+            withRetry429 { service.constructorStandings() }
+        } catch (e: Exception) {
+            val cached = cache?.load(F1Cache.KEY_CONSTRUCTORS) ?: throw e
+            val data = F1Json.constructorStandings(
+                kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
+            )
+            val table = data.standingsTable
+            return Cached(
+                table.season to (table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()),
+                fromCache = true,
+                cachedAt = cached.second
+            )
+        }
+        cache?.save(F1Cache.KEY_CONSTRUCTORS, raw.toString())
+        val data = F1Json.constructorStandings(raw)
         val table = data.standingsTable
-        val list = table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()
-        return table.season to list
+        return Cached(table.season to (table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()), fromCache = false)
     }
 
-    suspend fun seasonSchedule(): Pair<String, List<Race>> {
-        val data = F1Json.races(service.seasonSchedule())
-        return data.raceTable.season to data.raceTable.Races
+    suspend fun seasonSchedule(): Cached<Pair<String, List<Race>>> {
+        val raw = try {
+            withRetry429 { service.seasonSchedule() }
+        } catch (e: Exception) {
+            val cached = cache?.load(F1Cache.KEY_SCHEDULE) ?: throw e
+            val data = F1Json.races(
+                kotlinx.serialization.json.Json.parseToJsonElement(cached.first).jsonObject
+            )
+            return Cached(data.raceTable.season to data.raceTable.Races, fromCache = true, cachedAt = cached.second)
+        }
+        cache?.save(F1Cache.KEY_SCHEDULE, raw.toString())
+        val data = F1Json.races(raw)
+        return Cached(data.raceTable.season to data.raceTable.Races, fromCache = false)
     }
 
     private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
@@ -119,8 +186,14 @@ class F1Repository(
         null
     }
 
-    suspend fun raceResults(round: String): RaceDetail = coroutineScope {
-        val raw = service.raceResults(round)
+    suspend fun raceResults(round: String): Cached<RaceDetail> = coroutineScope {
+        val raw = try {
+            withRetry429 { service.raceResults(round) }
+        } catch (e: Exception) {
+            val cached = cache?.load(F1Cache.raceKey(round)) ?: throw e
+            val detail = F1Json.json.decodeFromString(kotlinx.serialization.serializer<RaceDetail>(), cached.first)
+            return@coroutineScope Cached(detail, fromCache = true, cachedAt = cached.second)
+        }
         val data = F1Json.races(raw)
         val race = data.raceTable.Races.firstOrNull()
             ?: throw IllegalStateException("Grand Prix introuvable (round $round)")
@@ -166,13 +239,17 @@ class F1Repository(
             }.awaitAll()
         }
 
-        RaceDetail(
+        val detail = RaceDetail(
             race = race,
             results = results,
             sprint = sprintDeferred.await(),
             qualifying = qualifyingDeferred.await(),
             alphaSessions = alphaDeferred.await()
         )
+        runCatching {
+            cache?.save(F1Cache.raceKey(round), F1Json.json.encodeToString(kotlinx.serialization.serializer<RaceDetail>(), detail))
+        }
+        Cached(detail, fromCache = false)
     }
 
     suspend fun driverProfile(driverId: String, currentTeam: String? = null): DriverProfile = coroutineScope {
@@ -304,6 +381,32 @@ class F1Repository(
             offset += races.size
         }
         return poles
+    }
+
+    suspend fun liveLaps(round: String, season: String): LiveLaps {
+        val roundId = alphaRoundId(season, round)
+            ?: throw IllegalStateException("GP introuvable côté API live")
+        val env = withRetry429 { alpha.raceLaps(roundId) }
+        val data = env.data ?: throw IllegalStateException("Pas de données live")
+        val laps = data.laps
+        if (laps.isEmpty()) throw IllegalStateException("Aucun tour disponible")
+        val lastLap = laps.maxOf { it.number }
+        val rows = laps
+            .filter { it.number == lastLap }
+            .sortedBy { it.position }
+            .map { lap ->
+                val drv = lap.driver_id?.let { data.drivers_by_id[it] }
+                val team = lap.team_id?.let { data.teams_by_id[it] }
+                LiveLapRow(
+                    position = lap.position,
+                    driverCode = drv?.abbreviation ?: "?",
+                    driverName = drv?.fullName ?: "?",
+                    teamName = team?.name ?: "",
+                    lapTime = lap.time_display,
+                    isFastest = lap.is_entry_fastest_lap
+                )
+            }
+        return LiveLaps(round, "", lastLap, rows)
     }
 
     private suspend fun championshipRecord(driverId: String, seasons: List<String>): Pair<Int, String?> {

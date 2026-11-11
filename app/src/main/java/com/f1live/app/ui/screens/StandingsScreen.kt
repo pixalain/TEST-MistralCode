@@ -50,7 +50,8 @@ import com.f1live.app.ui.teamColor
 fun StandingsScreen(
     state: UiState<StandingsUi>,
     onRefresh: () -> Unit,
-    onDriverClick: (String, String?) -> Unit = { _, _ -> }
+    onDriverClick: (String, String?) -> Unit = { _, _ -> },
+    lastUpdated: Long? = null
 ) {
     var tab by remember { mutableIntStateOf(0) }
     Column(modifier = Modifier.fillMaxSize()) {
@@ -76,7 +77,7 @@ fun StandingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item {
-                            SeasonHeader(state.data.season)
+                            SeasonHeader(state.data.season, state.fromCache, lastUpdated)
                         }
                         items(state.data.drivers, key = { it.Driver.driverId }) { d ->
                             DriverRow(d, onClick = { onDriverClick(d.Driver.driverId, d.Constructors.firstOrNull()?.name) })
@@ -88,7 +89,7 @@ fun StandingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item {
-                            SeasonHeader(state.data.season)
+                            SeasonHeader(state.data.season, state.fromCache, lastUpdated)
                         }
                         items(state.data.constructors, key = { it.Constructor.constructorId }) { c ->
                             TeamRow(c)
@@ -101,13 +102,27 @@ fun StandingsScreen(
 }
 
 @Composable
-private fun SeasonHeader(season: String) {
+fun FreshnessBadge(fromCache: Boolean, timestamp: Long?) {
+    if (timestamp == null || timestamp <= 0L) return
+    val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
+    val date = java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(timestamp))
+    Text(
+        text = if (fromCache) stringResource(R.string.offline_cached, date, time)
+               else stringResource(R.string.updated_at, time),
+        style = MaterialTheme.typography.labelSmall,
+        color = if (fromCache) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun SeasonHeader(season: String, fromCache: Boolean = false, timestamp: Long? = null) {
     Text(
         text = stringResource(R.string.season_classification, season),
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(bottom = 4.dp)
     )
+    FreshnessBadge(fromCache, timestamp)
 }
 
 @Composable
