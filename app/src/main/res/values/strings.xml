@@ -67,4 +67,6 @@
     <string name="widget_top3">Top 3 championnat</string>
     <string name="widget_no_data">Ouvrez l\'app pour charger les données</string>
     <string name="widget_description">Prochain Grand Prix et top 3 du championnat</string>
+    <string name="menu_open">Ouvrir le menu</string>
+    <string name="menu_season">Saison</string>
 </resources>

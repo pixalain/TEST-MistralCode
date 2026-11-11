@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SportsMotorsports
 import androidx.compose.material.icons.filled.Schedule
@@ -22,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,31 +88,48 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    val drawerState = androidx.compose.material3.rememberDrawerState(
+        androidx.compose.material3.DrawerValue.Closed
+    )
+    val scope = rememberCoroutineScope()
+    val season by viewModel.season.collectAsStateWithLifecycle()
+
+    androidx.compose.material3.ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            androidx.compose.material3.ModalDrawerSheet {
+                Text(
+                    text = stringResource(R.string.menu_season),
+                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                viewModel.availableSeasons.forEach { s ->
+                    androidx.compose.material3.NavigationDrawerItem(
+                        label = { Text(s) },
+                        selected = s == season,
+                        onClick = {
+                            viewModel.selectSeason(s)
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                }
+            }
+        }
+    ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
+                navigationIcon = {
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.menu_open)
+                        )
+                    }
+                },
                 actions = {
-                    var seasonMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                    val season by viewModel.season.collectAsStateWithLifecycle()
-                    val displaySeason = if (season == "current") "…" else season
-                    androidx.compose.material3.TextButton(onClick = { seasonMenu = true }) {
-                        Text(displaySeason, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                    }
-                    androidx.compose.material3.DropdownMenu(
-                        expanded = seasonMenu,
-                        onDismissRequest = { seasonMenu = false }
-                    ) {
-                        viewModel.availableSeasons.forEach { s ->
-                            androidx.compose.material3.DropdownMenuItem(
-                                text = { Text(s) },
-                                onClick = {
-                                    seasonMenu = false
-                                    viewModel.selectSeason(s)
-                                }
-                            )
-                        }
-                    }
                     IconButton(onClick = {
                         when (currentRoute) {
                             "standings" -> viewModel.refreshStandings()
@@ -206,5 +227,6 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                 )
             }
         }
+    }
     }
 }
