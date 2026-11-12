@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
@@ -101,21 +102,27 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
         drawerState = drawerState,
         drawerContent = {
             androidx.compose.material3.ModalDrawerSheet {
-                Text(
-                    text = stringResource(R.string.menu_season),
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-                viewModel.availableSeasons.forEach { s ->
-                    androidx.compose.material3.NavigationDrawerItem(
-                        label = { Text(s) },
-                        selected = s == season,
-                        onClick = {
-                            viewModel.selectSeason(s)
-                            scope.launch { drawerState.close() }
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                androidx.compose.foundation.layout.Column {
+                    Text(
+                        text = stringResource(R.string.menu_season),
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(16.dp)
                     )
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(viewModel.availableSeasons) { s ->
+                            androidx.compose.material3.NavigationDrawerItem(
+                                label = { Text(s) },
+                                selected = s == season,
+                                onClick = {
+                                    viewModel.selectSeason(s)
+                                    scope.launch { drawerState.close() }
+                                },
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
