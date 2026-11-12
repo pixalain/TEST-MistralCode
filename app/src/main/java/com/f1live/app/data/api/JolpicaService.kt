@@ -22,6 +22,7 @@ import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Url
 import java.util.concurrent.TimeUnit
 
 interface JolpicaService {
@@ -144,7 +145,32 @@ interface AlphaService {
     suspend fun raceLaps(@Path("roundId") roundId: String): AlphaEnvelope<AlphaLapsData>
 }
 
+interface WikipediaService {
+    @GET
+    suspend fun pageImages(@Url url: String): JsonObject
+}
+
 object ApiClient {
+
+    val wikipedia: WikipediaService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://en.wikipedia.org/")
+            .client(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        chain.proceed(
+                            chain.request().newBuilder()
+                                .header("User-Agent", "F1LiveApp/1.0 (local dev; contact: none)")
+                                .build()
+                        )
+                    }
+                    .build()
+            )
+            .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(WikipediaService::class.java)
+    }
+
 
     private val json = Json {
         ignoreUnknownKeys = true

@@ -112,17 +112,28 @@ private fun ProfileContent(profile: DriverProfile) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(96.dp)
                             .clip(CircleShape)
                             .background(teamColor(null)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = d.code ?: d.familyName.take(3).uppercase(),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (profile.photoUrl != null) {
+                            coil.compose.AsyncImage(
+                                model = profile.photoUrl,
+                                contentDescription = stringResource(R.string.driver_photo),
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                        if (profile.photoUrl == null) {
+                            Text(
+                                text = d.code ?: d.familyName.take(3).uppercase(),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(

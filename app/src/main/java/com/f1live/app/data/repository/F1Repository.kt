@@ -12,6 +12,7 @@ import com.f1live.app.data.model.QualifyingResult
 import com.f1live.app.data.model.Race
 import com.f1live.app.data.model.Result
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -54,7 +55,8 @@ data class DriverStats(
 @kotlinx.serialization.Serializable
 data class DriverProfile(
     val driver: Driver,
-    val stats: DriverStats
+    val stats: DriverStats,
+    val photoUrl: String? = null
 )
 
 @kotlinx.serialization.Serializable
@@ -150,6 +152,25 @@ class F1Repository(
         cache?.save(key, raw.toString())
         val data = F1Json.races(raw)
         return Cached(data.raceTable.season to data.raceTable.Races, fromCache = false)
+    }
+
+
+    suspend fun driverPhotoUrl(driver: com.f1live.app.data.model.Driver): String? {
+        val name = "${driver.givenName} ${driver.familyName}"
+        val cacheKey = "photo_" + driver.driverId
+        cache?.load(cacheKey)?.let { (raw, _) -> return raw }
+        for (lang in listOf("en", "fr")) {
+            try {
+                val api = "https://$lang.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=original&format=json&redirects=1&titles=" +
+                    java.net.URLEncoder.encode(name, "UTF-8")
+                val raw = withRetry429 { ApiClient.wikipedia.pageImages(api) }
+                parseWikipediaPhoto(raw)?.let {
+                    cache?.save(cacheKey, it)
+                    return it
+                }
+            } catch (e: Exception) { /* try next language */ }
+        }
+        return null
     }
 
     private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
@@ -311,7 +332,8 @@ class F1Repository(
                 championships = titles,
                 bestChampionship = bestChamp,
                 seasons = seasonsCount
-            )
+            ),
+            photoUrl = runCatching { driverPhotoUrl(driver) }.getOrNull()
         )
     }
 
@@ -452,3 +474,12 @@ class F1Repository(
         return titles to best?.toString()
     }
 }
+
+// Extracts the original page image URL from a Wikipedia API response (pure, testable)
+fun parseWikipediaPhoto(json: kotlinx.serialization.json.JsonObject): String? {
+    val pages = json["query"]?.jsonObject?.get("pages")?.jsonObject ?: return null
+    return pages.values.firstOrNull()?.jsonObject
+        ?.get("original")?.jsonObject
+        ?.get("source")?.jsonPrimitive?.content
+}
+

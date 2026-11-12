@@ -3,7 +3,8 @@
 Application Android (Kotlin + Jetpack Compose) pour suivre la Formule 1 en temps réel :
 
 - **Onglet « Actus »** : 10 news du dernier GP et 10 du prochain GP, en français (flux RSS Motorsport.com FR, F1Only, AutoHebdo), filtrage par nom du GP, mise en cache
-- **Multi-saisons** : sélecteur d'année dans la barre du haut (2018 → saison en cours) pour classements, calendrier et résultats de GP
+- **Photo du pilote** sur sa fiche (Wikipedia/Wikimedia, mise en cache)
+- **Multi-saisons** : sélecteur d'année dans la barre du haut (1950 → saison en cours) pour classements, calendrier et résultats de GP
 - **Classement des pilotes** (points, victoires, écurie)
 - **Fiche pilote** en cliquant sur un pilote : nom, âge, nationalité, écurie actuelle, palmarès complet (victoires, poles, podiums, tours rapides, points, saisons, meilleur championnat, titres) et derniers résultats
 - **Classement des écuries** (constructors)

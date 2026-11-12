@@ -108,7 +108,7 @@ class F1ViewModel(
     val season: StateFlow<String> = _season.asStateFlow()
 
     val availableSeasons: List<String> =
-        (java.time.Year.now().value downTo 2018).map { it.toString() }
+        (java.time.Year.now().value downTo 1950).map { it.toString() }
 
     init {
         refreshStandings()

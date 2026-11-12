@@ -211,7 +211,8 @@ private fun DetailContent(
         }
     }
     val hasRace = detail.alphaSessions.any { it.code == "R" && it.rows.isNotEmpty() } || detail.results.isNotEmpty()
-    val liveTab = if (hasRace) DetailTab(R.string.live_tab, "LIVE") else null
+    val seasonOk = (detail.race.season.toIntOrNull() ?: 2026) >= 2018 // alpha live data starts 2018
+    val liveTab = if (hasRace && seasonOk) DetailTab(R.string.live_tab, "LIVE") else null
     val tabs = if (detail.alphaSessions.isNotEmpty()) {
         (if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered) +
             listOfNotNull(liveTab)
