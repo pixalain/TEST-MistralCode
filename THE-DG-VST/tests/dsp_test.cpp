@@ -60,15 +60,18 @@ int main()
         p.master = 1.0f;
         p.reverbOn = false;
         chain.update (p);
+        chain.reset();
         std::vector<float> l = signal, r = signal;
         chain.processBlock (l.data(), static_cast<int> (l.size()));
         chain.processBlock (r.data(), static_cast<int> (r.size()));
         bool ok = allFinite (l) && allFinite (r);
-        // dry path = softClip(x * master) * 0.95 with master = 1
+        // dry path = DC-blocker(softClip(x * master) * 0.95) with master = 1
+        OnePoleHP refHp;
+        refHp.setCoeff (std::exp (-2.0f * float (kPi) * 20.0f / float (sr)));
         float maxErr = 0.0f;
         for (size_t i = 0; i < l.size(); ++i)
-            maxErr = std::max (maxErr, std::fabs (l[i] - dg::softClip (signal[i] * 1.0f) * 0.95f));
-        check (ok && maxErr < 1e-5f, "bypass path is bit-transparent (softClip(master) only)");
+            maxErr = std::max (maxErr, std::fabs (l[i] - refHp.process (dg::softClip (signal[i] * 1.0f) * 0.95f)));
+        check (ok && maxErr < 1e-5f, "bypass path is bit-transparent (softClip(master) + DC blocker)");
     }
 
     // 2. Each effect individually: finite output and actually changes the signal
@@ -199,6 +202,100 @@ int main()
             if (d > 1e-3f) anyDiffer = true;
         }
         check (anyDiffer, "factory presets are not all identical");
+    }
+
+    // 7. Click-free bypass toggling (footswitch mid-note): crossfade must keep
+    //    the sample-to-sample delta small even when fuzz+delay+reverb+phaser
+    //    are switched off at once.
+    {
+        chain.reset();
+        ChainParams p;
+        p.master = 0.8f;
+        p.fuzzOn = true;  p.fuzzDrive = 0.9f; p.fuzzMode = 1;
+        p.phaserOn = true; p.phDepth = 1.0f; p.phMix = 1.0f;
+        p.delayOn = true; p.delayTime = 300.0f; p.delayFb = 0.4f; p.delayMix = 0.4f;
+        p.reverbOn = true; p.revMix = 0.4f;
+        chain.update (p);
+        // prime the chain with a loud sustained note first
+        std::vector<float> warm (4096, 0.0f);
+        for (size_t i = 0; i < warm.size(); ++i) warm[i] = 0.6f * std::sin (2.0f * float (dg::kPi) * 220.0f * float (i) / 44100.0f);
+        chain.processBlock (warm.data(), (int) warm.size());
+        // now flip everything off in one update and keep playing
+        ChainParams p2 = p;
+        p2.fuzzOn = p2.phaserOn = p2.delayOn = p2.reverbOn = false;
+        chain.update (p2);
+        std::vector<float> buf = warm;
+        chain.processBlock (buf.data(), (int) buf.size());
+        float maxDelta = 0.0f;
+        for (size_t i = 1; i < buf.size(); ++i)
+            maxDelta = std::max (maxDelta, std::fabs (buf[i] - buf[i - 1]));
+        char _nm[160]; std::snprintf (_nm, sizeof (_nm), "bypass toggles are click-free (crossfaded, maxDelta=%.3f)", maxDelta); check (allFinite (buf) && maxDelta < 0.35f, _nm);
+    }
+
+    // 8. Delay time sweep (knob turn / preset change) must not click
+    {
+        chain.reset();
+        ChainParams p;
+        p.master = 0.8f; p.delayOn = true; p.delayMix = 0.5f; p.delayFb = 0.4f; p.delayTime = 100.0f;
+        chain.update (p);
+        std::vector<float> buf (8192, 0.0f);
+        for (size_t i = 0; i < buf.size(); ++i) buf[i] = 0.6f * std::sin (2.0f * float (dg::kPi) * 330.0f * float (i) / 44100.0f);
+        p.delayTime = 1200.0f; // big jump in one go
+        chain.update (p);
+        chain.processBlock (buf.data(), (int) buf.size());
+        float maxDelta = 0.0f;
+        for (size_t i = 1; i < buf.size(); ++i)
+            maxDelta = std::max (maxDelta, std::fabs (buf[i] - buf[i - 1]));
+        char _nm[160]; std::snprintf (_nm, sizeof (_nm), "delay time sweep is click-free (maxDelta=%.3f)", maxDelta); check (allFinite (buf) && maxDelta < 0.35f, _nm);
+    }
+
+    // 9. Uni-Vibe at max depth/rate must stay stable (no self-oscillation blowup)
+    {
+        chain.reset();
+        ChainParams p;
+        p.master = 0.8f; p.vibeOn = true; p.vibeRate = 1.0f; p.vibeDepth = 1.0f; p.vibeMix = 1.0f;
+        chain.update (p);
+        std::vector<float> buf (44100, 0.0f);
+        for (size_t i = 0; i < buf.size(); ++i)
+            buf[i] = (i < 64) ? 0.8f * (float (i) / 64.0f) : 0.8f * std::sin (2.0f * float (dg::kPi) * 110.0f * float (i) / 44100.0f);
+        chain.processBlock (buf.data(), (int) buf.size());
+        float peak = 0.0f;
+        for (auto v : buf) peak = std::max (peak, std::fabs (v));
+        char _nm[160]; std::snprintf (_nm, sizeof (_nm), "uni-vibe max settings stay stable (peak=%.3f)", peak); check (allFinite (buf) && peak < 8.0f, _nm);
+    }
+
+    // 10. Reverb size/decay sweep must stay finite and bounded (live size change)
+    {
+        chain.reset();
+        ChainParams p;
+        p.master = 0.8f; p.reverbOn = true; p.revMix = 0.5f; p.revSize = 0.0f; p.revDecay = 0.0f;
+        chain.update (p);
+        std::vector<float> buf (22050, 0.0f);
+        for (size_t i = 0; i < buf.size(); ++i) buf[i] = (i == 0) ? 1.0f : 0.0f; // impulse
+        p.revSize = 1.0f; p.revDecay = 1.0f;
+        chain.update (p);
+        chain.processBlock (buf.data(), (int) buf.size());
+        float peak = 0.0f;
+        for (auto v : buf) peak = std::max (peak, std::fabs (v));
+        char _nm[160]; std::snprintf (_nm, sizeof (_nm), "reverb size/decay sweep stays bounded (peak=%.3f)", peak); check (allFinite (buf) && peak < 8.0f, _nm);
+    }
+
+    // 11. Master volume slam 0 -> 1 must be smooth (no click)
+    {
+        chain.reset();
+        ChainParams p;
+        p.master = 0.0f;
+        chain.update (p);
+        std::vector<float> buf (4096, 0.0f);
+        for (size_t i = 0; i < buf.size(); ++i) buf[i] = 0.7f * std::sin (2.0f * float (dg::kPi) * 440.0f * float (i) / 44100.0f);
+        chain.processBlock (buf.data(), (int) buf.size());
+        p.master = 1.0f;
+        chain.update (p);
+        chain.processBlock (buf.data(), (int) buf.size());
+        float maxDelta = 0.0f;
+        for (size_t i = 1; i < buf.size(); ++i)
+            maxDelta = std::max (maxDelta, std::fabs (buf[i] - buf[i - 1]));
+        char _nm[160]; std::snprintf (_nm, sizeof (_nm), "master volume slam is smooth (maxDelta=%.3f)", maxDelta); check (allFinite (buf) && maxDelta < 0.35f, _nm);
     }
 
     if (failures == 0)

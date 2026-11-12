@@ -151,7 +151,8 @@ void TheDGVSTAudioProcessor::loadFactoryPreset (int index)
         return;
     applyChainParamsToParameters (dg::factoryPresets()[(size_t) index].params);
     currentProgram = index;
-    updateChainFromParameters();
+    // NOTE: only atomic parameter writes here - the audio thread picks them up
+    // on the next block. Touching the DSP from this thread would race with it.
 }
 
 void TheDGVSTAudioProcessor::loadUserPreset (int index)
@@ -160,7 +161,6 @@ void TheDGVSTAudioProcessor::loadUserPreset (int index)
         return;
     apvts.replaceState (userPresetStates[(size_t) index]);
     currentProgram = (int) dg::factoryPresets().size() + index;
-    updateChainFromParameters();
 }
 
 juce::String TheDGVSTAudioProcessor::getUserPresetName (int index) const
@@ -269,7 +269,6 @@ void TheDGVSTAudioProcessor::prepareToPlay (double sampleRate, int)
 {
     dspL.setSampleRate (sampleRate);
     dspR.setSampleRate (sampleRate);
-    updateChainFromParameters();
 }
 
 void TheDGVSTAudioProcessor::releaseResources()
@@ -286,56 +285,6 @@ bool TheDGVSTAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
     return layouts.getMainInputChannelSet() == layouts.getMainOutputChannelSet();
 }
 
-void TheDGVSTAudioProcessor::updateChainFromParameters()
-{
-    auto& p = chainParams;
-    p.wahOn     = paramBool (apvts, "wahOn");
-    p.wahPedal  = param (apvts, "wahPedal");
-    p.compOn    = paramBool (apvts, "compOn");
-    p.compSustain = param (apvts, "compSustain");
-    p.compLevel   = param (apvts, "compLevel");
-    p.fuzzOn    = paramBool (apvts, "fuzzOn");
-    p.fuzzMode  = (int) param (apvts, "fuzzMode");
-    p.fuzzDrive = param (apvts, "fuzzDrive");
-    p.fuzzTone  = param (apvts, "fuzzTone");
-    p.fuzzVol   = param (apvts, "fuzzVol");
-    p.octaveOn  = paramBool (apvts, "octaveOn");
-    p.octUp     = param (apvts, "octUp");
-    p.octSub    = param (apvts, "octSub");
-    p.vibeOn    = paramBool (apvts, "vibeOn");
-    p.vibeRate  = param (apvts, "vibeRate");
-    p.vibeDepth = param (apvts, "vibeDepth");
-    p.vibeMix   = param (apvts, "vibeMix");
-    p.phaserOn  = paramBool (apvts, "phaserOn");
-    p.phRate    = param (apvts, "phRate");
-    p.phDepth   = param (apvts, "phDepth");
-    p.phMix     = param (apvts, "phMix");
-    p.flangerOn = paramBool (apvts, "flangerOn");
-    p.flRate    = param (apvts, "flRate");
-    p.flDepth   = param (apvts, "flDepth");
-    p.flRegen   = param (apvts, "flRegen");
-    p.flMix     = param (apvts, "flMix");
-    p.chorusOn  = paramBool (apvts, "chorusOn");
-    p.chRate    = param (apvts, "chRate");
-    p.chDepth   = param (apvts, "chDepth");
-    p.chMix     = param (apvts, "chMix");
-    p.tremOn    = paramBool (apvts, "tremOn");
-    p.trRate    = param (apvts, "trRate");
-    p.trDepth   = param (apvts, "trDepth");
-    p.delayOn   = paramBool (apvts, "delayOn");
-    p.delayTime = param (apvts, "delayTime");
-    p.delayFb   = param (apvts, "delayFb");
-    p.delayMix  = param (apvts, "delayMix");
-    p.reverbOn  = paramBool (apvts, "reverbOn");
-    p.revMix    = param (apvts, "revMix");
-    p.revSize   = param (apvts, "revSize");
-    p.revDecay  = param (apvts, "revDecay");
-    p.master    = param (apvts, "master");
-
-    dspL.update (p);
-    dspR.update (p);
-}
-
 void TheDGVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                            juce::MidiBuffer& midiMessages)
 {
@@ -348,11 +297,17 @@ void TheDGVSTAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (m.isController() && m.getControllerNumber() == 1)
             wahCc.store (m.getControllerValue() / 127.0f);
     }
-    const float cc = wahCc.load();
-    if (cc >= 0.0f && paramBool (apvts, "wahOn"))
-        chainParams.wahPedal = cc;
+    // Build the parameter snapshot ON THE AUDIO THREAD from the atomic raw
+    // values only (lock-free, no shared struct with the message thread).
+    dg::ChainParams p;
+    readParametersInto (p);
 
-    updateChainFromParameters();
+    const float cc = wahCc.load();
+    if (cc >= 0.0f && p.wahOn)
+        p.wahPedal = cc;
+
+    dspL.update (p);
+    dspR.update (p);
 
     const int numSamples = buffer.getNumSamples();
     const int numChannels = buffer.getNumChannels();

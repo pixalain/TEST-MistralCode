@@ -51,7 +51,6 @@ public:
 
     // Parameter access for the editor
     juce::AudioProcessorValueTreeState apvts;
-    dg::ChainParams chainParams;
     dg::DspChain dspL, dspR;
 
     // Wah pedal follows MIDI CC1 (mod wheel) when enabled
@@ -59,7 +58,6 @@ public:
     std::atomic<int> currentProgram { 0 };
 
 private:
-    void updateChainFromParameters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TheDGVSTAudioProcessor)
 };

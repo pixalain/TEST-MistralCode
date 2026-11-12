@@ -16,6 +16,23 @@ IN ──► WAH (Cry Baby) ──► COMP (MXR Dyna Comp / Boss CS-2) ──►
 Chaque étage est une pédale avec son **footswitch chrome + LED** et ses **potards chrome**.
 Le **wah** répond aussi au **MIDI CC1 (mod wheel)**.
 
+## Qualite audio / anti-craquements
+
+- **Thread audio 100 % lock-free** : les parametres sont lus via des atomics dans
+  `processBlock` ; le thread message (presets, UI) n'ecrit que des valeurs atomiques,
+  jamais la structure DSP -> plus de race condition.
+- **Aucun allocation sur le thread audio** : buffers de delay/reverb/flanger/chorus
+  pre-alloues a taille max dans `prepareToPlay` (les reverb comb纂 utilisent des
+  `std::array` fixes).
+- **Crossfade de bypass ~11 ms** sur chaque pedale : plus de clic au footswitch.
+- **Lissage par echantillon** (one-pole) du master, du temps de delay, du feedback,
+  du mix, du threshold/makeup du compresseur, de la taille/decay de la reverb.
+- **SVF Chamberlin bride en stabilite** (f*q < 1.7) : plus d'auto-oscillation.
+- **DC blockers** (HP 20-35 Hz) en sortie de fuzz, dans les boucles de reverb et en
+  sortie de chaine ; `ScopedNoDenormals` (FTZ/DAZ) actif dans `processBlock`.
+- **Coefficients des filtres one-pole corriges** : la coupure reelle correspond au
+  parametre (avant, le HP de sortie attenait tout le signal utile).
+
 ## Presets
 
 Le plugin embarque **14 presets d'usine inspires des morceaux phares de Pink Floyd**
