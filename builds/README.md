@@ -15,3 +15,5 @@ Builds produits par la CI : run [#43246284725](https://github.com/pixalain/TEST-
 empreintes SHA-256 :
 - `ferrari-history.apk` : `ab046fe852947092b12d7b81e2a06085704f292eae2dca3e33dea6fae5476a8f`
 - `ferrari-history-ios.zip` : `3ac2e834c6602e820b95d350a05777843fc050f5b3def0ae783ee8466e1d6b52`
+
+> Note : la liste des célébrités est indicative (propriétaires célèbres documentés, actuels ou passés).
