@@ -33,7 +33,9 @@ private val http = OkHttpClient.Builder()
     .build()
 
 suspend fun fetchFeed(url: String): String = withRetryHttp {
-    http.newCall(Request.Builder().url(url).build()).execute().use { it.body?.string() ?: "" }
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        http.newCall(Request.Builder().url(url).build()).execute().use { it.body?.string() ?: "" }
+    }
 }
 
 private suspend fun <T> withRetryHttp(block: suspend () -> T): T {
