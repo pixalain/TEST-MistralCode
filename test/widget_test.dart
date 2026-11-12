@@ -22,6 +22,8 @@ void main() {
       expect(car.topSpeed, isNotEmpty);
       expect(car.engine, isNotEmpty);
       expect(car.description, isNotEmpty);
+      expect(car.celebrities, isNotEmpty,
+          reason: 'Chaque modèle doit lister au moins une célébrité propriétaire');
     }
   });
 

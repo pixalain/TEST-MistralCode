@@ -14,6 +14,7 @@ class CarModel {
   final String production;
   final String imageUrl;
   final String imageCredit;
+  final List<String> celebrities;
 
   const CarModel({
     required this.id,
@@ -31,6 +32,7 @@ class CarModel {
     required this.production,
     required this.imageUrl,
     required this.imageCredit,
+    this.celebrities = const [],
   });
 
   String get years => yearEnd == null ? '$yearStart' : '$yearStart–$yearEnd';

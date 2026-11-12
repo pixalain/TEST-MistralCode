@@ -67,6 +67,30 @@ class CarDetailScreen extends StatelessWidget {
                 _SpecTile(icon: Icons.fitness_center, label: 'Poids', value: car.weight),
                 _SpecTile(
                     icon: Icons.factory, label: 'Production', value: car.production),
+                if (car.celebrities.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Propri\u00e9taires c\u00e9l\u00e8bres',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: FerrariHistoryApp.rossoCorsa,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final name in car.celebrities)
+                        Chip(
+                          avatar: const Icon(Icons.person, size: 18),
+                          label: Text(name),
+                          backgroundColor: const Color(0xFF2A2A2A),
+                          labelStyle: const TextStyle(color: Colors.white),
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Text(
                   'Photo : ${car.imageCredit} — source Wikimedia Commons',

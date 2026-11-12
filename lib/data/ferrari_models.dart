@@ -15,6 +15,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '170 km/h',
     weight: '750 kg',
     production: '2 exemplaires',
+    celebrities: ['Franco Cortese (pilote, 1ère victoire à Rome 1947)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/1947_Ferrari_125_S.jpg/1280px-1947_Ferrari_125_S.jpg',
     imageCredit: 'Wikimedia Commons (CC BY 2.0)',
@@ -34,6 +35,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '190 km/h',
     weight: '650 kg',
     production: '~25 exemplaires',
+    celebrities: ['Tommy Lee (Mötley Crüe, châssis 0002M)', 'Gianni Agnelli (industriel italien)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/1948_Ferrari_166MM_barchetta_0002M.jpg/1280px-1948_Ferrari_166MM_barchetta_0002M.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -53,6 +55,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '280 km/h',
     weight: '880 kg',
     production: '36 exemplaires',
+    celebrities: ['Ralph Lauren (styliste)', 'Rob Walton (héritier Walmart)', 'Bernie Ecclestone (F1)', 'Sultan de Brunei (2 exemplaires)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/1/1a/1962_Ferrari_250_GTO_34_2.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -72,6 +75,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '250 km/h',
     weight: '1 100 kg',
     production: '~106 exemplaires',
+    celebrities: ['Nicolas Cage (acteur, California Spyder 1959)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Ferrari_250_California_Spyder_SWB.jpg/1280px-Ferrari_250_California_Spyder_SWB.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -91,6 +95,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '287 km/h',
     weight: '850 kg',
     production: '32 exemplaires',
+    celebrities: ['Ralph Lauren (1964, ex-pilotée par Jackie Stewart)', 'Rob Walton (1964)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Ferrari_250_LM.jpg/1280px-Ferrari_250_LM.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -110,6 +115,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '258 km/h',
     weight: '1 100 kg',
     production: '~442 exemplaires',
+    celebrities: ['Steve McQueen (acteur, 275 GTB/4)', 'Roman Polanski (réalisateur)', 'Clint Eastwood (acteur)', 'Ross Brawn (patron d\'écurie F1)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/1966_Ferrari_275_GTB_Coupe_%2823672273965%29.jpg/1280px-1966_Ferrari_275_GTB_Coupe_%2823672273965%29.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -129,6 +135,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '235 km/h',
     weight: '1 080 kg',
     production: '2 487 exemplaires',
+    celebrities: ['Keith Richards (Rolling Stones)', 'Cher (chanteuse, Dino 246 GTS 1972)', 'Frank Williams (fondateur écurie F1)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Ferrari_Dino_246_GT_1969.jpg/1280px-Ferrari_Dino_246_GT_1969.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -148,6 +155,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '280 km/h',
     weight: '1 400 kg',
     production: '~1 400 exemplaires',
+    celebrities: ['Elton John (1972, 1ère Ferrari achetée)', 'Eric Clapton (guitariste)', 'Nicolas Cage (Daytona noire)', 'Adam Clayton (U2)', 'Lord Hesketh (F1)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/7/72/Ferrari_365_GTB-4_Daytona_red_vr.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -167,6 +175,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '256 km/h',
     weight: '1 090 kg',
     production: '~12 000 exemplaires (GTB/GTS)',
+    celebrities: ['Tom Selleck (Magnum P.I.)', 'Elvis Presley (308 GT4 1975)', 'Frank Beard (ZZ Top, 308 GTS QV)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/1984_Ferrari_308_GTB_qv.jpg/1280px-1984_Ferrari_308_GTB_qv.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -186,6 +195,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '305 km/h',
     weight: '1 160 kg',
     production: '272 exemplaires',
+    celebrities: ['Niki Lauda (dernier exemplaire, offert par Ferrari)', 'Sultan de Brunei (dont 1 Evoluzione)', 'Ian Poulter (golfeur)', 'David Letterman (TV)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Ferrari_288_GTO.jpg/1280px-Ferrari_288_GTO.jpg',
     imageCredit: 'Wikimedia Commons (CC BY 2.0)',
@@ -205,6 +215,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '290 km/h',
     weight: '1 430 kg',
     production: '~7 200 exemplaires (Testarossa/512 TR/F512 M)',
+    celebrities: ['Diego Maradona (footballeur)', 'Gianni Agnelli (Testarossa Spider)', 'Peter Weller (acteur)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Ferrari_Testarossa.jpg/1280px-Ferrari_Testarossa.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 2.0)',
@@ -224,6 +235,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '324 km/h',
     weight: '1 100 kg',
     production: '1 311 exemplaires',
+    celebrities: ['Lewis Hamilton (pilote F1, 2025)', 'Lando Norris (pilote F1)', 'Nick Mason (Pink Floyd)', 'Sultan de Brunei (8 F40 !)', 'Ralph Lauren', 'Propriétaires d\'origine : Niki Lauda, Jacky Ickx, Stirling Moss'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Ferrari_F40.JPG/1280px-Ferrari_F40.JPG',
     imageCredit: 'Wikimedia Commons',
@@ -243,6 +255,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '302 km/h',
     weight: '1 400 kg',
     production: '~1 000 exemplaires (365/512 BB + BBi)',
+    celebrities: ['Eric Clapton (3 exemplaires possédés, dont celle de l\'album « Slowhand »)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Ferrari_512_BB_%2852576076961%29.jpg/1280px-Ferrari_512_BB_%2852576076961%29.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -262,6 +275,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '275 km/h',
     weight: '1 390 kg',
     production: '~8 600 exemplaires (tb/ts)',
+    celebrities: ['Ayrton Senna (pilote F1)', 'Jess Hart (mannequin, 348 ts customisée)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Ferrari_348_TB.jpg/1280px-Ferrari_348_TB.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -281,6 +295,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '295 km/h',
     weight: '1 350 kg',
     production: '~11 600 exemplaires',
+    celebrities: ['Diego Maradona (F355 Spider rouge, 1996)', 'Roberto Carlos (footballeur)', 'Jay Kay (Jamiroquai, F355 GTS)', 'Gordon Ramsay (F355 GTS)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Ferrari_F355_Coup%C3%A9.jpg/1280px-Ferrari_F355_Coup%C3%A9.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 2.0)',
@@ -300,6 +315,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '320 km/h',
     weight: '1 690 kg',
     production: '3 083 exemplaires',
+    celebrities: ['Jay Leno (animateur TV)', 'Axl Rose (Guns N\' Roses)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/7/76/Ferrari_550_Maranello_-_Flick_-_Concorso_Italiano_2005.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -319,6 +335,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '295 km/h',
     weight: '1 290 kg',
     production: '~17 500 exemplaires',
+    celebrities: ['Arnold Schwarzenegger (360 Spider)', 'Oliver Kahn (footballeur, 360 Spider)', 'Jennifer Capriati (tenniste, offerte par FILA)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Ferrari_360_Modena_%288008521005%29.jpg/1280px-Ferrari_360_Modena_%288008521005%29.jpg',
     imageCredit: 'Wikimedia Commons (CC BY 2.0)',
@@ -338,6 +355,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '315 km/h',
     weight: '1 450 kg',
     production: '~15 000 exemplaires',
+    celebrities: ['LeBron James (F430 Spider)', 'Diego Maradona (F430 Spider)', 'Gordon Ramsay (430 Scuderia)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Ferrari_F430_2.jpg/1280px-Ferrari_F430_2.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -357,6 +375,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '325 km/h',
     weight: '1 380 kg',
     production: '~15 000 exemplaires (Italia/Spider/Speciale)',
+    celebrities: ['Justin Bieber (458 Italia bleue, blacklisté par Ferrari)', 'Kim Kardashian (458 Italia)', 'Simon Cowell (458 Italia)', 'Deadmau5 (458 Spider « Purrari »)', 'Kobe Bryant (458 rouge)', 'Tyga (458 Spider)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/6/6e/Ferrari_458_Italia.jpg',
     imageCredit: 'Wikimedia Commons (CC BY 2.0)',
@@ -376,6 +395,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '325 km/h',
     weight: '1 230 kg',
     production: '349 exemplaires',
+    celebrities: ['Sultan de Brunei (les 3 premiers exemplaires)', 'Ian Poulter (golfeur)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Ferrari_F50_%288705895157%29.jpg/1280px-Ferrari_F50_%288705895157%29.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 2.0)',
@@ -395,6 +415,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '340 km/h',
     weight: '1 525 kg',
     production: '~4 000 exemplaires',
+    celebrities: ['Cristiano Ronaldo (F12tdf)', 'Gordon Ramsay (F12 TDF)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ferrari_F12berlinetta_IMG_2941.jpg/1280px-Ferrari_F12berlinetta_IMG_2941.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
@@ -414,6 +435,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '350 km/h',
     weight: '1 255 kg',
     production: '499 coupés + 210 Aperta',
+    celebrities: ['Cristiano Ronaldo', 'Lewis Hamilton (coupé + Aperta)', 'Jay Kay (10 Ferrari dont LaFerrari)', 'Sammy Hagar (Motley Crüëe)', 'Felipe Massa (F1)', 'Gordon Ramsay (LaFerrari + Aperta)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Ferrari_LaFerrari.jpg/1280px-Ferrari_LaFerrari.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -433,6 +455,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '316 km/h',
     weight: '1 625 kg',
     production: '~3 400 exemplaires',
+    celebrities: ['Lindsay Lohan (California)', 'Gordon Ramsay (California T Spider)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Ferrari_California_T.jpg/1280px-Ferrari_California_T.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -452,6 +475,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '320 km/h',
     weight: '1 575 kg',
     production: '~12 000 exemplaires (Portofino + M)',
+    celebrities: ['Gordon Ramsay', 'Ram Kapoor (acteur indien, Portofino M)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Ferrari_Portofino_IMG_0018.jpg/1280px-Ferrari_Portofino_IMG_0018.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
@@ -471,6 +495,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '350 km/h',
     weight: '1 255 kg',
     production: '400 exemplaires (+1)',
+    celebrities: ['Nicolas Cage (revendue pour ses dettes, blacklisté)', 'Floyd Mayweather (revente rapide, blacklisté)', 'Eric Clapton', 'Jay Kay (Enzo noir)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/2002_Ferrari_Enzo_F60-1_%2830408372012%29.jpg/1280px-2002_Ferrari_Enzo_F60-1_%2830408372012%29.jpg',
     imageCredit: 'Wikimedia Commons (CC BY 2.0)',
@@ -490,6 +515,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '340 km/h',
     weight: '1 525 kg',
     production: '~8 000 exemplaires (Superfast/GTS/Competizione)',
+    celebrities: ['Gordon Ramsay', 'Zlatan Ibrahimovic (812 Competizione A)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ferrari_812_Superfast.jpg/1280px-Ferrari_812_Superfast.jpg',
     imageCredit: 'Wikimedia Commons',
@@ -508,6 +534,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '340 km/h',
     weight: '1 570 kg',
     production: 'Production en cours (Stradale/Spider/XX)',
+    celebrities: ['Zlatan Ibrahimovic (SF90 Spider pour ses 40 ans)', 'Mukesh Ambani (homme d\'affaires indien)', 'Travis Scott (rappeur)', 'Kevin Hart (1er SF90 Spider aux USA)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/2019_Ferrari_SF90_Stradale.jpg/1280px-2019_Ferrari_SF90_Stradale.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
@@ -527,6 +554,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '340 km/h',
     weight: '1 435 kg',
     production: 'Production en cours (Tributo/Spider)',
+    celebrities: ['Gucci Mane (rappeur, 1re F8 Tributo aux USA)', 'Om Raut (réalisateur, offerte par Bhushan Kumar)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Ferrari_F8_Tributo_IMG_3273.jpg/1280px-Ferrari_F8_Tributo_IMG_3273.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
@@ -545,6 +573,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '320 km/h',
     weight: '1 570 kg',
     production: 'Production en cours (Roma/Spider)',
+    celebrities: ['Fedez (rappeur italien, 1ère Roma livrée en Italie)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Red_Ferrari_Roma.jpg/1280px-Red_Ferrari_Roma.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
@@ -563,6 +592,7 @@ const List<CarModel> ferrariModels = [
     topSpeed: '310 km/h',
     weight: '1 880 kg',
     production: 'Production en cours',
+    celebrities: ['Cristiano Ronaldo (1er propriétaire, daily driver)', 'Zlatan Ibrahimovic (cadeau de ses 42 ans)'],
     imageUrl:
         'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/2023_Ferrari_Purosangue.jpg/1280px-2023_Ferrari_Purosangue.jpg',
     imageCredit: 'Wikimedia Commons (CC BY-SA 4.0)',
