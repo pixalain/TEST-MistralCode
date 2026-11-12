@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Mon Suivi Sport – Basic-Fit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-icon">🏋️</span>
+      <h1>Mon Suivi <span class="brand">Basic-Fit</span></h1>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">📊 Tableau de bord</button>
+      <button class="tab" data-tab="sessions">📝 Séances</button>
+      <button class="tab" data-tab="history">📈 Historique</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TABLEAU DE BORD -->
+    <section id="dashboard" class="panel active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Séances totales</h3>
+          <p id="stat-sessions">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Temps total</h3>
+          <p id="stat-duration">0 h</p>
+        </div>
+        <div class="stat-card">
+          <h3>Volume total</h3>
+          <p id="stat-volume">0 kg</p>
+        </div>
+        <div class="stat-card">
+          <h3>Séries cette semaine</h3>
+          <p id="stat-week">0</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📅 Activité des 12 dernières semaines</h2>
+        <div id="heatmap" class="heatmap"></div>
+      </div>
+      <div class="card">
+        <h2>⚡ Séance rapide</h2>
+        <button id="quick-start" class="btn primary">Démarrer une séance maintenant</button>
+      </div>
+    </section>
+
+    <!-- SÉANCES -->
+    <section id="sessions" class="panel">
+      <div class="card">
+        <h2>Nouvelle séance</h2>
+        <form id="session-form">
+          <div class="form-row">
+            <label>Date
+              <input type="date" id="s-date" required />
+            </label>
+            <label>Type
+              <select id="s-type">
+                <option>Musculation</option>
+                <option>Cardio</option>
+                <option>Cours collectif</option>
+                <option>Full body</option>
+                <option>Autre</option>
+              </select>
+            </label>
+            <label>Durée (min)
+              <input type="number" id="s-duration" min="1" value="60" required />
+            </label>
+            <label>Club
+              <input type="text" id="s-club" placeholder="Basic-Fit ..." />
+            </label>
+          </div>
+          <h3>Exercices</h3>
+          <div id="exercises">
+            <div class="exercise">
+              <input type="text" class="ex-name" placeholder="Exercice (ex: Développé couché)" list="ex-suggestions" />
+              <input type="number" class="ex-sets" placeholder="Séries" min="1" />
+              <input type="number" class="ex-reps" placeholder="Reps" min="1" />
+              <input type="number" class="ex-weight" placeholder="Poids (kg)" min="0" step="0.5" />
+              <button type="button" class="btn danger ex-remove">✕</button>
+            </div>
+          </div>
+          <datalist id="ex-suggestions"></datalist>
+          <button type="button" id="add-exercise" class="btn">+ Ajouter un exercice</button>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Enregistrer la séance</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- HISTORIQUE -->
+    <section id="history" class="panel">
+      <div class="card">
+        <h2>Mes séances</h2>
+        <div id="sessions-list"></div>
+      </div>
+      <div class="card">
+        <h2>Progression du volume (kg / séance)</h2>
+        <canvas id="chart" width="600" height="220"></canvas>
+      </div>
+      <button id="export-btn" class="btn">⬇️ Exporter mes données (JSON)</button>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

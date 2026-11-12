@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BasicFit" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#14151a</item>
+        <item name="android:statusBarColor">#1e2029</item>
+    </style>
+</resources>
