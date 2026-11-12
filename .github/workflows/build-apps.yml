@@ -65,7 +65,7 @@ jobs:
 
   ios:
     name: iOS (build sans signature)
-    runs-on: macos-14
+    runs-on: macos-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
