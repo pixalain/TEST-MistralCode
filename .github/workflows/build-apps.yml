@@ -1,0 +1,100 @@
+name: Build Android & iOS
+
+on:
+  push:
+    branches: [main, 'vibe/**']
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android (APK)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+
+      - name: Installer les dépendances Flutter
+        run: flutter pub get
+
+      - name: Analyser le code
+        run: flutter analyze --no-pub
+
+      - name: Lancer les tests
+        run: flutter test
+
+      - name: Préparer la clé de signature release (générée à la volée, jamais stockée)
+        run: |
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /tmp/release.key -out /tmp/release.crt -days 9125 \
+            -subj "/C=FR/O=Ferrari History Fan Project/CN=Ferrari History"
+          openssl pkcs12 -export -inkey /tmp/release.key -in /tmp/release.crt \
+            -out /tmp/release.p12 -name ferrari-history-release \
+            -passout pass:ferrari-release-2025
+          echo "KEYSTORE_PATH=/tmp/release.p12" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=ferrari-release-2025" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=ferrari-release-2025" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=ferrari-history-release" >> "$GITHUB_ENV"
+
+      - name: Construire l'APK Android (release, signé v1+v2+v3)
+        run: flutter build apk --release
+
+      - name: Vérifier la signature de l'APK (sécurité Android)
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          echo "== apksigner verify --verbose =="
+          "$APKSIGNER" verify --verbose "$APK"
+          echo "== certificats =="
+          "$APKSIGNER" verify --print-certs "$APK"
+
+      - name: Publier l'APK en artefact (lien de téléchargement Android)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ferrari-history-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  ios:
+    name: iOS (build sans signature)
+    runs-on: macos-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+
+      - name: Installer les dépendances Flutter
+        run: flutter pub get
+
+      - name: Analyser le code
+        run: flutter analyze --no-pub
+
+      - name: Lancer les tests
+        run: flutter test
+
+      - name: Construire l'app iOS (no codesign, pour simulator)
+        run: flutter build ios --no-codesign --simulator
+
+      - name: Empaqueter le .app iOS en ZIP
+        run: |
+          cd build/ios/iphonesimulator
+          zip -r "$GITHUB_WORKSPACE/ferrari-history-ios-simulator.zip" Runner.app
+          ls -la "$GITHUB_WORKSPACE/ferrari-history-ios-simulator.zip"
+
+      - name: Publier le .app iOS en artefact (lien de téléchargement iOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ferrari-history-ios-app
+          path: ferrari-history-ios-simulator.zip
