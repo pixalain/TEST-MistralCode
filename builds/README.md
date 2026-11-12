@@ -17,3 +17,4 @@ empreintes SHA-256 :
 - `ferrari-history-ios.zip` : `3ac2e834c6602e820b95d350a05777843fc050f5b3def0ae783ee8466e1d6b52`
 
 > Note : la liste des célébrités est indicative (propriétaires célèbres documentés, actuels ou passés).
+// relance CI iOS
