@@ -83,12 +83,15 @@ class F1ViewModel(
                 val cache = com.f1live.app.data.repository.F1Cache(getApplication())
                 suspend fun newsFor(race: com.f1live.app.data.model.Race?): List<com.f1live.app.data.repository.NewsItem> {
                     if (race == null) return emptyList()
-                    val key = "news_" + race.round
+                    val key = "news_v2_" + race.round
                     cache.load(key)?.let { (raw, _) ->
-                        return com.f1live.app.data.repository.F1Json.json.decodeFromString(newsSerializer, raw)
+                        val cached = com.f1live.app.data.repository.F1Json.json.decodeFromString(newsSerializer, raw)
+                        if (cached.isNotEmpty()) return cached
                     }
                     val fresh = com.f1live.app.data.repository.fetchNewsForRace(race, 10)
-                    cache.save(key, com.f1live.app.data.repository.F1Json.json.encodeToString(newsSerializer, fresh))
+                    if (fresh.isNotEmpty()) {
+                        cache.save(key, com.f1live.app.data.repository.F1Json.json.encodeToString(newsSerializer, fresh))
+                    }
                     return fresh
                 }
                 _news.value = UiState.Success(NewsUi(last, newsFor(last), next, newsFor(next)))
