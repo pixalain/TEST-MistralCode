@@ -69,4 +69,8 @@
     <string name="widget_description">Prochain Grand Prix et top 3 du championnat</string>
     <string name="menu_open">Ouvrir le menu</string>
     <string name="menu_season">Saison</string>
+    <string name="tab_news">Actus</string>
+    <string name="news_last_gp">Dernier GP — %1$s</string>
+    <string name="news_next_gp">Prochain GP — %1$s</string>
+    <string name="news_empty">Aucune actualité trouvée pour ce Grand Prix.</string>
 </resources>

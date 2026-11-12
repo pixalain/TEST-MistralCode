@@ -34,6 +34,13 @@ data class RacesUi(
     val races: List<Race> = emptyList()
 )
 
+data class NewsUi(
+    val lastRace: Race? = null,
+    val lastNews: List<com.f1live.app.data.repository.NewsItem> = emptyList(),
+    val nextRace: Race? = null,
+    val nextNews: List<com.f1live.app.data.repository.NewsItem> = emptyList()
+)
+
 class F1ViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -54,6 +61,42 @@ class F1ViewModel(
 
     private val _liveLaps = MutableStateFlow<UiState<com.f1live.app.data.repository.LiveLaps>>(UiState.Loading)
     val liveLaps: StateFlow<UiState<com.f1live.app.data.repository.LiveLaps>> = _liveLaps.asStateFlow()
+
+    private val _news = MutableStateFlow<UiState<NewsUi>>(UiState.Loading)
+    val news: StateFlow<UiState<NewsUi>> = _news.asStateFlow()
+
+    fun loadNews() {
+        _news.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                val schedule = repository.seasonSchedule(_season.value)
+                val races = schedule.data.second
+                val now = System.currentTimeMillis()
+                val withDates = races.mapNotNull { r ->
+                    com.f1live.app.notifications.sessionEpochMillis(
+                        com.f1live.app.data.model.Session(r.date, r.time)
+                    )?.let { r to it }
+                }
+                val last = withDates.filter { it.second <= now }.maxByOrNull { it.second }?.first
+                val next = withDates.filter { it.second > now }.minByOrNull { it.second }?.first
+                val newsSerializer = kotlinx.serialization.serializer<List<com.f1live.app.data.repository.NewsItem>>()
+                val cache = com.f1live.app.data.repository.F1Cache(getApplication())
+                suspend fun newsFor(race: com.f1live.app.data.model.Race?): List<com.f1live.app.data.repository.NewsItem> {
+                    if (race == null) return emptyList()
+                    val key = "news_" + race.round
+                    cache.load(key)?.let { (raw, _) ->
+                        return com.f1live.app.data.repository.F1Json.json.decodeFromString(newsSerializer, raw)
+                    }
+                    val fresh = com.f1live.app.data.repository.fetchNewsForRace(race, 10)
+                    cache.save(key, com.f1live.app.data.repository.F1Json.json.encodeToString(newsSerializer, fresh))
+                    return fresh
+                }
+                _news.value = UiState.Success(NewsUi(last, newsFor(last), next, newsFor(next)))
+            } catch (e: Exception) {
+                _news.value = UiState.Error(e.message ?: "Erreur actus")
+            }
+        }
+    }
 
     private val _lastUpdated = MutableStateFlow<Long?>(null)
     val lastUpdated: StateFlow<Long?> = _lastUpdated.asStateFlow()

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SportsMotorsports
 import androidx.compose.material.icons.filled.Schedule
@@ -39,6 +40,7 @@ import androidx.navigation.navArgument
 import com.f1live.app.ui.F1ViewModel
 import com.f1live.app.ui.screens.RaceDetailScreen
 import com.f1live.app.ui.screens.DriverProfileScreen
+import com.f1live.app.ui.screens.NewsScreen
 import com.f1live.app.ui.screens.RacesScreen
 import com.f1live.app.ui.screens.StandingsScreen
 import com.f1live.app.ui.theme.F1LiveTheme
@@ -63,6 +65,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val detailState by viewModel.raceDetail.collectAsStateWithLifecycle()
     val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
     val liveState by viewModel.liveLaps.collectAsStateWithLifecycle()
+    val newsState by viewModel.news.collectAsStateWithLifecycle()
     val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -134,6 +137,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                         when (currentRoute) {
                             "standings" -> viewModel.refreshStandings()
                             "races" -> viewModel.refreshRaces()
+                            "news" -> viewModel.loadNews()
                             else -> {}
                         }
                     }) {
@@ -158,6 +162,12 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onClick = { navController.navigate("races") { popUpTo(0) } },
                     icon = { Icon(Icons.Default.Flag, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_races)) }
+                )
+                NavigationBarItem(
+                    selected = currentRoute == "news",
+                    onClick = { navController.navigate("news") { popUpTo(0) } },
+                    icon = { Icon(Icons.Default.Article, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_news)) }
                 )
             }
         }
@@ -202,6 +212,13 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                         navController.navigate("race/${race.round}/?season=$season")
                     },
                     lastUpdated = lastUpdated
+                )
+            }
+            composable("news") {
+                LaunchedEffect(Unit) { viewModel.loadNews() }
+                NewsScreen(
+                    state = newsState,
+                    onRefresh = { viewModel.loadNews() }
                 )
             }
             composable(
