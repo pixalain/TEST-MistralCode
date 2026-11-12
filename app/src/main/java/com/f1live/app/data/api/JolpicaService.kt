@@ -150,6 +150,11 @@ interface WikipediaService {
     suspend fun pageImages(@Url url: String): JsonObject
 }
 
+interface WikidataService {
+    @GET
+    suspend fun api(@Url url: String): JsonObject
+}
+
 object ApiClient {
 
     val wikipedia: WikipediaService by lazy {
@@ -169,6 +174,25 @@ object ApiClient {
             .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(WikipediaService::class.java)
+    }
+
+    val wikidata: WikidataService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://www.wikidata.org/")
+            .client(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        chain.proceed(
+                            chain.request().newBuilder()
+                                .header("User-Agent", "F1LiveApp/1.0 (local dev; contact: none)")
+                                .build()
+                        )
+                    }
+                    .build()
+            )
+            .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(WikidataService::class.java)
     }
 
 

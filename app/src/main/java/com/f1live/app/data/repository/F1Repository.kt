@@ -13,6 +13,7 @@ import com.f1live.app.data.model.Race
 import com.f1live.app.data.model.Result
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.jsonArray
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -56,7 +57,8 @@ data class DriverStats(
 data class DriverProfile(
     val driver: Driver,
     val stats: DriverStats,
-    val photoUrl: String? = null
+    val photoUrl: String? = null,
+    val deathDate: String? = null
 )
 
 @kotlinx.serialization.Serializable
@@ -173,7 +175,28 @@ class F1Repository(
         return null
     }
 
-    private suspend fun <T> withRetry429(maxRetries: Int = 3, block: suspend () -> T): T {
+
+    suspend fun driverDeathDate(driver: com.f1live.app.data.model.Driver): String? {
+        val name = "${driver.givenName} ${driver.familyName}"
+        val cacheKey = "death_" + driver.driverId
+        cache?.load(cacheKey)?.let { (raw, _) -> return raw.ifBlank { null } }
+        for (lang in listOf("en", "fr")) {
+            try {
+                val search = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search=" +
+                    java.net.URLEncoder.encode(name, "UTF-8") +
+                    "&language=$lang&format=json&limit=1&type=item"
+                val qid = parseWikidataEntityId(withRetry429 { ApiClient.wikidata.api(search) }) ?: continue
+                val claims = "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=$qid&props=claims&format=json"
+                val death = parseWikidataDeathDate(withRetry429 { ApiClient.wikidata.api(claims) })
+                cache?.save(cacheKey, death ?: "")
+                return death
+            } catch (e: Exception) { /* next language */ }
+        }
+        cache?.save(cacheKey, "")
+        return null
+    }
+
+    private suspend fun <T> withRetry429(maxRetries: Int = 5, block: suspend () -> T): T {
         var attempt = 0
         while (true) {
             try {
@@ -181,8 +204,16 @@ class F1Repository(
             } catch (e: retrofit2.HttpException) {
                 if (e.code() == 429 && attempt < maxRetries) {
                     attempt++
-                    val waitMs = (e.response()?.headers()?.get("Retry-After")?.toLongOrNull() ?: 2L) * 1000 + 250
+                    val waitMs = (e.response()?.headers()?.get("Retry-After")?.toLongOrNull() ?: (2L * attempt)) * 1000 + 250
                     delay(waitMs)
+                    continue
+                }
+                throw e
+            } catch (e: java.io.IOException) {
+                // transient network errors (DNS, SSL, timeouts): backoff and retry
+                if (attempt < maxRetries) {
+                    attempt++
+                    delay(1000L * attempt * attempt)
                     continue
                 }
                 throw e
@@ -333,7 +364,8 @@ class F1Repository(
                 bestChampionship = bestChamp,
                 seasons = seasonsCount
             ),
-            photoUrl = runCatching { driverPhotoUrl(driver) }.getOrNull()
+            photoUrl = runCatching { driverPhotoUrl(driver) }.getOrNull(),
+            deathDate = runCatching { driverDeathDate(driver) }.getOrNull()
         )
     }
 
@@ -483,3 +515,19 @@ fun parseWikipediaPhoto(json: kotlinx.serialization.json.JsonObject): String? {
         ?.get("source")?.jsonPrimitive?.content
 }
 
+
+// Pure parsers for Wikidata API responses (unit-testable)
+fun parseWikidataEntityId(json: kotlinx.serialization.json.JsonObject): String? =
+    json["search"]?.jsonArray?.firstOrNull()?.jsonObject?.get("id")?.jsonPrimitive?.content
+
+fun parseWikidataDeathDate(json: kotlinx.serialization.json.JsonObject): String? {
+    val entities = json["entities"]?.jsonObject ?: return null
+    val claims = entities.values.firstOrNull()?.jsonObject?.get("claims")?.jsonObject ?: return null
+    val p570 = claims["P570"]?.jsonArray?.firstOrNull()?.jsonObject ?: return null
+    val time = p570["mainsnak"]?.jsonObject
+        ?.get("datavalue")?.jsonObject
+        ?.get("value")?.jsonObject
+        ?.get("time")?.jsonPrimitive?.content ?: return null
+    // "+1994-05-01T00:00:00Z" -> "1994-05-01"
+    return Regex("^(\\+?\\d{4,})-(\\d{2})-(\\d{2})").find(time)?.let { "${it.groupValues[1].removePrefix("+")}-${it.groupValues[2]}-${it.groupValues[3]}" }
+}

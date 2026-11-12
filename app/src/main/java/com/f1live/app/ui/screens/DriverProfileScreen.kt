@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -117,13 +118,21 @@ private fun ProfileContent(profile: DriverProfile) {
                             .background(teamColor(null)),
                         contentAlignment = Alignment.Center
                     ) {
+                        val placeholder = androidx.compose.ui.res.painterResource(R.drawable.ic_driver_placeholder)
                         if (profile.photoUrl != null) {
                             coil.compose.AsyncImage(
-                                model = profile.photoUrl,
+                                model = coil.request.ImageRequest.Builder(LocalContext.current)
+                                    .data(profile.photoUrl)
+                                    .memoryCacheKey(profile.photoUrl)
+                                    .diskCacheKey(profile.photoUrl)
+                                    .build(),
                                 contentDescription = stringResource(R.string.driver_photo),
                                 modifier = Modifier
                                     .size(96.dp)
-                                    .clip(CircleShape)
+                                    .clip(CircleShape),
+                                placeholder = placeholder,
+                                error = placeholder,
+                                fallback = placeholder
                             )
                         }
                         if (profile.photoUrl == null) {
@@ -141,11 +150,20 @@ private fun ProfileContent(profile: DriverProfile) {
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+                    val death = profile.deathDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
                     Text(
                         text = buildList {
                             d.permanentNumber?.let { add("n°$it") }
                             d.nationality?.let { add(it) }
-                            age?.let { add(stringResource(R.string.years_old, it)) }
+                            if (death != null && d.dateOfBirth != null) {
+                                val birth = runCatching { LocalDate.parse(d.dateOfBirth!!) }.getOrNull()
+                                if (birth != null) {
+                                    add(stringResource(R.string.years_range, birth.year, death.year))
+                                    add(stringResource(R.string.age_at_death, Period.between(birth, death).years))
+                                }
+                            } else {
+                                age?.let { add(stringResource(R.string.years_old, it)) }
+                            }
                         }.joinToString(" · "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -155,6 +173,13 @@ private fun ProfileContent(profile: DriverProfile) {
                             text = stringResource(R.string.born_on, formatBirthDate(it)),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (death != null) {
+                        Text(
+                            text = stringResource(R.string.died_on, formatBirthDate(death.toString())),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                     s.currentTeam?.let {
