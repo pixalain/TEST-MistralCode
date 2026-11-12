@@ -10,11 +10,11 @@
 - **Android** : autoriser « sources inconnues » puis installer l'APK. APK **signé release (v1+v2+v3, vérifié par  en CI)**, minSdk 21 (Android 5.0+).
 - **iOS** : dézipper, puis installer sur le simulateur : `xcrun simctl install booted Runner.app` (build non signé ; pour un appareil physique : `flutter build ipa` avec un compte Apple Developer).
 
-Builds produits par la CI : run [#43246284725](https://github.com/pixalain/TEST-MistralCode/actions/runs/43246284725) (Android ✅ iOS ✅).
+Builds produits par la CI : run [#43252711388](https://github.com/pixalain/TEST-MistralCode/actions/runs/43252711388) (Android ✅ iOS ✅).
 
 empreintes SHA-256 :
-- `ferrari-history.apk` : `ab046fe852947092b12d7b81e2a06085704f292eae2dca3e33dea6fae5476a8f`
-- `ferrari-history-ios.zip` : `3ac2e834c6602e820b95d350a05777843fc050f5b3def0ae783ee8466e1d6b52`
+- `ferrari-history.apk` : `d3228a975592ac6f6d2553f376b19f2fbcc33f94ebec5e5c567645d2f9c85d37`
+- `ferrari-history-ios.zip` : `5600fe78d5f4d5ab6c215ef76d8f69332cc979a79ccc148b4c13c80cfe712c03`
 
 > Note : la liste des célébrités est indicative (propriétaires célèbres documentés, actuels ou passés).
 // relance CI iOS
