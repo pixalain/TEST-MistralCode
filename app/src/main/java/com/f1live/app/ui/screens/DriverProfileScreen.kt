@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -99,7 +100,12 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
     val d = profile.driver
     val s = profile.stats
     val age = driverAge(d.dateOfBirth)
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
     LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(max = 560.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -194,13 +200,15 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
         item {
             Text(
                 text = stringResource(R.string.palmares),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
         item {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatChip(Icons.Default.EmojiEvents, stringResource(R.string.stat_wins), s.wins.toString(), Color(0xFFFFD54F))
@@ -227,13 +235,15 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
             item {
                 Text(
                     text = stringResource(R.string.recent_results),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
             item {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     s.recentForm.forEach { (race, pos) ->
@@ -245,6 +255,7 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
                 }
             }
         }
+    }
     }
 }
 
