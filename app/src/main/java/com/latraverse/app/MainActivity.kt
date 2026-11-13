@@ -2,6 +2,7 @@ package com.latraverse.app
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.CalendarContract
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
@@ -367,6 +368,31 @@ fun ConcertCard(concert: Concert, onClick: () -> Unit) {
     }
 }
 
+fun calendarIntent(concert: Concert): Intent {
+    val m = Regex("(\\d{1,2})[hH](\\d{2})").find(concert.time)
+    val hour = m?.groupValues?.get(1)?.toIntOrNull() ?: 20
+    val minute = m?.groupValues?.get(2)?.toIntOrNull() ?: 30
+    val begin = concert.date.atTime(hour, minute)
+    val end = begin.plusHours(2)
+    val zone = java.time.ZoneId.systemDefault()
+    val beginMillis = java.time.ZonedDateTime.of(begin, zone).toInstant().toEpochMilli()
+    val endMillis = java.time.ZonedDateTime.of(end, zone).toInstant().toEpochMilli()
+    val description = buildString {
+        append("Concert à La Traverse, Cléon")
+        if (concert.support != null) append("\nPremière partie : ").append(concert.support)
+        append("\nGenre : ").append(concert.genre)
+        if (concert.ticketUrl != null) append("\nBilletterie : ").append(concert.ticketUrl)
+    }
+    return Intent(Intent.ACTION_INSERT)
+        .setData(CalendarContract.Events.CONTENT_URI)
+        .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, beginMillis)
+        .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
+        .putExtra(CalendarContract.Events.TITLE, "${concert.artist} — La Traverse")
+        .putExtra(CalendarContract.Events.DESCRIPTION, description)
+        .putExtra(CalendarContract.Events.EVENT_LOCATION, Venue.ADDRESS)
+        .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
@@ -453,6 +479,9 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(24.dp))
             if (!concert.isPast) {
+                ActionRow(Icons.Filled.CalendarMonth, "Ajouter à mon agenda") {
+                    context.startActivity(calendarIntent(concert))
+                }
                 ActionRow(Icons.Filled.Web, "Réserver un billet") {
                     context.startActivity(
                         Intent(Intent.ACTION_VIEW, Uri.parse(concert.ticketUrl ?: Venue.WEBSITE))
