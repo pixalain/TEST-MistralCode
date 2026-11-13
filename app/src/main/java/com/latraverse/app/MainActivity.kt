@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -75,9 +76,46 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LaTraverseApp() {
+    var showSplash by remember { mutableStateOf(true) }
+
+    if (showSplash) {
+        SplashScreen { showSplash = false }
+        return
+    }
+
+    LaTraverseMainContent()
+}
+
+@Composable
+fun SplashScreen(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            AsyncImage(
+                model = "https://www.latraverse.org/IMG/logo/logo_traverse_2025_noir.png?1756828759",
+                contentDescription = "La Traverse",
+                error = painterResource(R.drawable.ic_launcher_foreground),
+                modifier = Modifier.size(220.dp)
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                "TOUCHEZ POUR ENTRER",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LaTraverseMainContent() {
     var selectedConcert by remember { mutableStateOf<Concert?>(null) }
 
     if (selectedConcert != null) {
