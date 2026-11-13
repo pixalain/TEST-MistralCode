@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -50,11 +52,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.latraverse.app.data.Concert
 import com.latraverse.app.data.Concerts
 import com.latraverse.app.data.Venue
+import coil.compose.AsyncImage
 import com.latraverse.app.ui.theme.LaTraverseTheme
 import com.latraverse.app.ui.theme.TraverseYellow
 import java.time.format.DateTimeFormatter
@@ -259,8 +264,20 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
         ) {
+            if (concert.imageUrl != null) {
+                AsyncImage(
+                    model = concert.imageUrl,
+                    contentDescription = concert.artist,
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.ic_launcher_foreground),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                )
+            }
+            Column(Modifier.padding(20.dp)) {
             Text(
                 concert.formattedDate().replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.titleLarge,
@@ -286,6 +303,7 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
             }
             ActionRow(Icons.Filled.Map, "Itinéraire vers la salle") {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Venue.MAP_URL)))
+            }
             }
         }
     }

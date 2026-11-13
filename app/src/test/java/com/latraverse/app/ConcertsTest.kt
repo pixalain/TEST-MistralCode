@@ -43,4 +43,12 @@ class ConcertsTest {
             assertTrue(it.genre.isNotBlank())
         }
     }
+
+    @Test
+    fun `every concert has an artist photo url from latraverse org`() {
+        Concerts.all.forEach {
+            assertTrue(it.imageUrl != null)
+            assertTrue(it.imageUrl!!.startsWith("https://www.latraverse.org/IMG/logo/"))
+        }
+    }
 }
