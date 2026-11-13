@@ -59,8 +59,106 @@ object TremplinRepository {
         TremplinEdition(2003, 1, LocalDate.of(2003, 10, 12), listOf("Spoonful"), emptyList(), eventUrl = SITE + "Laureat-2003-Spoonful")
     )
 
-    private val participantsByYear = mapOf(
-        2020 to listOf("Lady'Stealer", "Hobbo's", "Masstø", "Living West")
+    val photosByYear: Map<Int, List<String>> = mapOf(
+        2025 to listOf(
+            "https://www.latraverse.org/IMG/logo/oscar_ferdinand.jpg?1784202582",
+            "https://www.latraverse.org/IMG/logo/connorshelby.jpg?1751930957"
+        ),
+        2024 to listOf(
+            "https://www.latraverse.org/IMG/logo/miniature_spotify_1_.jpg?1733827571",
+            "https://www.latraverse.org/IMG/logo/high_fade_press_shot_3_copie.jpg?1717598651"
+        ),
+        2023 to listOf(
+            "https://www.latraverse.org/IMG/logo/408242961_10229091819976651_5837696665817305920_n.jpg?1702041755",
+            "https://www.latraverse.org/IMG/logo/they_call_me_rico_-_dossier_de_presse_france_copie.jpg?1702040706"
+        ),
+        2022 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton751.jpg?1702040701",
+            "https://www.latraverse.org/IMG/logo/arton717.jpg?1702040700"
+        ),
+        2021 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton689.jpg?1702040699",
+            "https://www.latraverse.org/IMG/logo/arton668.jpg?1702040698"
+        ),
+        2020 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton626.jpg?1702040696",
+            "https://www.latraverse.org/IMG/logo/arton617.jpg?1702040696"
+        ),
+        2019 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton574.jpg?1702040694"
+        ),
+        2018 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton513.jpg?1702040691",
+            "https://www.latraverse.org/IMG/logo/arton470.jpg?1702040689"
+        ),
+        2017 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton453.jpg?1702040688",
+            "https://www.latraverse.org/IMG/logo/arton402.jpg?1702040686"
+        ),
+        2016 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton394.jpg?1702040685",
+            "https://www.latraverse.org/IMG/logo/arton352.jpg?1702040684"
+        ),
+        2015 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton328.jpg?1702040682",
+            "https://www.latraverse.org/IMG/logo/arton304.jpg?1702040681",
+            "https://www.latraverse.org/IMG/logo/arton293.jpg?1702040681"
+        ),
+        2014 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton268.jpg?1702040679",
+            "https://www.latraverse.org/IMG/logo/arton254.jpg?1702040679",
+            "https://www.latraverse.org/IMG/logo/arton247.jpg?1702040679",
+            "https://www.latraverse.org/IMG/logo/arton293.jpg?1702040681"
+        ),
+        2013 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton231.jpg?1702040678",
+            "https://www.latraverse.org/IMG/logo/arton213.jpg?1702040677",
+            "https://www.latraverse.org/IMG/logo/arton247.jpg?1702040679",
+            "https://www.latraverse.org/IMG/logo/arton293.jpg?1702040681"
+        ),
+        2012 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton202.jpg?1702040677",
+            "https://www.latraverse.org/IMG/logo/arton192.jpg?1702040676",
+            "https://www.latraverse.org/IMG/logo/arton178.jpg?1702040676",
+            "https://www.latraverse.org/IMG/logo/arton213.jpg?1702040677",
+            "https://www.latraverse.org/IMG/logo/arton247.jpg?1702040679"
+        ),
+        2011 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton174.jpg?1702040676",
+            "https://www.latraverse.org/IMG/logo/arton160.jpg?1702040675",
+            "https://www.latraverse.org/IMG/logo/arton178.jpg?1702040676",
+            "https://www.latraverse.org/IMG/logo/arton213.jpg?1702040677"
+        ),
+        2010 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton149.jpg?1702040674",
+            "https://www.latraverse.org/IMG/logo/arton145.jpg?1702040674",
+            "https://www.latraverse.org/IMG/logo/arton178.jpg?1702040676"
+        ),
+        2009 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton128.jpg?1702040674",
+            "https://www.latraverse.org/IMG/logo/arton114.jpg?1702040673"
+        ),
+        2008 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton76.jpg?1702040701",
+            "https://www.latraverse.org/IMG/logo/arton27.jpg?1702040680"
+        ),
+        2007 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton75.jpg?1702040701",
+            "https://www.latraverse.org/IMG/logo/arton20.jpg?1702040677"
+        ),
+        2006 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton74.jpg?1702040701",
+            "https://www.latraverse.org/IMG/logo/arton80.jpg?1702040702"
+        ),
+        2005 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton73.jpg?1702040701"
+        ),
+        2004 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton72.jpg?1702040700"
+        ),
+        2003 to listOf(
+            "https://www.latraverse.org/IMG/logo/arton68.jpg?1702040698"
+        ),
     )
 
     suspend fun fetchEditions(): List<TremplinEdition> = withContext(Dispatchers.IO) {
@@ -73,6 +171,17 @@ object TremplinRepository {
                 if (parsed.isEmpty()) emptyList() else parsed
             }
         }.getOrElse { emptyList() }
+    }
+
+    suspend fun fetchEditionBio(eventUrl: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = okhttp3.Request.Builder().url(eventUrl).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                val html = response.body?.string() ?: return@withContext null
+                RemoteSource.parseEventDetails(html).description
+            }
+        }.getOrNull()
     }
 
     fun parseTremplinPage(html: String): List<TremplinEdition> {
@@ -106,7 +215,7 @@ object TremplinRepository {
                     edition = editionForYear(year),
                     date = date,
                     winners = winners,
-                    participants = participantsByYear[year] ?: emptyList(),
+                    participants = emptyList(),
                     imageUrl = image
                 )
             )

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -562,13 +563,6 @@ fun TremplinCard(edition: TremplinEdition, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     color = TraverseYellow
                 )
-                if (edition.participants.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Participants : ${edition.participants.joinToString(", ")}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
                 if (edition.eventUrl != null) {
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -586,6 +580,15 @@ fun TremplinCard(edition: TremplinEdition, onClick: () -> Unit) {
 @Composable
 fun TremplinDetailScreen(edition: TremplinEdition, onBack: () -> Unit) {
     val context = LocalContext.current
+    var bio by remember { mutableStateOf<String?>(null) }
+    val photos = remember { TremplinRepository.photosByYear[edition.year] ?: emptyList() }
+
+    LaunchedEffect(edition.eventUrl) {
+        if (edition.eventUrl != null) {
+            bio = TremplinRepository.fetchEditionBio(edition.eventUrl)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -666,43 +669,32 @@ fun TremplinDetailScreen(edition: TremplinEdition, onBack: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(20.dp))
-                Text("PARTICIPANTS", style = MaterialTheme.typography.titleMedium)
+                Text("BIO DU LAURÉAT", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                if (edition.participants.isEmpty()) {
-                    Text(
-                        "La liste des participants de cette édition n'a pas été publiée par la salle.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    edition.participants.forEach { participant ->
-                        val isWinner = edition.winners.any { w ->
-                            w.lowercase().contains(participant.lowercase()) ||
-                                participant.lowercase().contains(w.lowercase())
-                        }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant
+                Text(
+                    bio ?: "Biographie du lauréat indisponible hors ligne.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                if (photos.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    Text("PHOTOS", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(photos) { photo ->
+                            AsyncImage(
+                                model = photo,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                error = painterResource(R.mipmap.ic_launcher_foreground),
+                                modifier = Modifier
+                                    .size(140.dp)
+                                    .clickable {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(photo))
+                                        )
+                                    }
                             )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(participant, style = MaterialTheme.typography.titleMedium)
-                                Spacer(Modifier.weight(1f))
-                                if (isWinner) {
-                                    Icon(
-                                        Icons.Filled.EmojiEvents,
-                                        contentDescription = "Lauréat",
-                                        tint = TraverseYellow
-                                    )
-                                }
-                            }
                         }
                     }
                 }

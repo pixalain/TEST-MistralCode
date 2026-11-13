@@ -48,7 +48,6 @@ class TremplinTest {
         assertEquals(listOf("Oscard Ferdinand"), e2025.winners)
         val e2020 = editions.first { it.year == 2020 }
         assertEquals(listOf("Hobbo's", "Lady'Stealer"), e2020.winners)
-        assertEquals(listOf("Lady'Stealer", "Hobbo's", "Masstø", "Living West"), e2020.participants)
         assertTrue(editions == editions.sortedByDescending { it.year })
     }
 
@@ -60,5 +59,18 @@ class TremplinTest {
         assertEquals(2003, bundled.last().year)
         assertTrue(bundled.none { it.year in 2004..2025 && it.winners.isEmpty() })
         assertTrue(bundled.first().upcoming)
+    }
+
+    @Test
+    fun `photo galleries are available per edition up to five photos`() {
+        val photos = TremplinRepository.photosByYear
+        assertTrue(photos.isNotEmpty())
+        photos.values.forEach { gallery ->
+            assertTrue(gallery.size <= 5)
+            gallery.forEach { url ->
+                assertTrue(url.startsWith("https://www.latraverse.org/"))
+            }
+        }
+        assertTrue((photos[2012]?.size ?: 0) == 5)
     }
 }
