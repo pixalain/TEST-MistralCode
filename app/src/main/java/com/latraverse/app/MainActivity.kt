@@ -491,10 +491,16 @@ fun ActionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
 @Composable
 fun TremplinScreen(modifier: Modifier) {
     var editions by remember { mutableStateOf(TremplinRepository.bundled) }
+    var selected by remember { mutableStateOf<TremplinEdition?>(null) }
 
     LaunchedEffect(Unit) {
         val remote = TremplinRepository.fetchEditions()
         if (remote.isNotEmpty()) editions = remote
+    }
+
+    if (selected != null) {
+        TremplinDetailScreen(selected!!) { selected = null }
+        return
     }
 
     LazyColumn(
@@ -502,18 +508,18 @@ fun TremplinScreen(modifier: Modifier) {
         modifier = modifier.fillMaxSize()
     ) {
         items(editions, key = { it.year }) { edition ->
-            TremplinCard(edition)
+            TremplinCard(edition, onClick = { selected = edition })
         }
     }
 }
 
 @Composable
-fun TremplinCard(edition: TremplinEdition) {
-    val context = LocalContext.current
+fun TremplinCard(edition: TremplinEdition, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
@@ -566,15 +572,148 @@ fun TremplinCard(edition: TremplinEdition) {
                 if (edition.eventUrl != null) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Voir la page du lauréat",
+                        "Voir la fiche complète",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.clickable {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(edition.eventUrl))
-                            )
-                        }
+                        color = MaterialTheme.colorScheme.secondary
                     )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TremplinDetailScreen(edition: TremplinEdition, onBack: () -> Unit) {
+    val context = LocalContext.current
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "${edition.edition}${if (edition.edition == 1) "er" else "e"} Tremplin — ${edition.year}"
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+        ) {
+            if (edition.date != null) {
+                Text(
+                    edition.date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy"))
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            if (edition.upcoming) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("PROCHAINE ÉDITION", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Le ${edition.edition}e Tremplin de La Traverse se tiendra à La Traverse, Cléon. " +
+                                "Les groupes sélectionnés auditionnent en public, en première partie d'un concert professionnel. " +
+                                "Le vainqueur sera annoncé après le tremplin.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            } else {
+                Text("VAINQUEUR", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = TraverseYellow
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.EmojiEvents,
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.Black,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            edition.winners.joinToString(" / "),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = androidx.compose.ui.graphics.Color.Black
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Text("PARTICIPANTS", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                if (edition.participants.isEmpty()) {
+                    Text(
+                        "La liste des participants de cette édition n'a pas été publiée par la salle.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    edition.participants.forEach { participant ->
+                        val isWinner = edition.winners.any { w ->
+                            w.lowercase().contains(participant.lowercase()) ||
+                                participant.lowercase().contains(w.lowercase())
+                        }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isWinner) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(participant, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.weight(1f))
+                                if (isWinner) {
+                                    Icon(
+                                        Icons.Filled.EmojiEvents,
+                                        contentDescription = "Lauréat",
+                                        tint = TraverseYellow
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (edition.eventUrl != null) {
+                    Spacer(Modifier.height(16.dp))
+                    ActionRow(Icons.Filled.Web, "Page du lauréat sur latraverse.org") {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(edition.eventUrl))
+                        )
+                    }
                 }
             }
         }
