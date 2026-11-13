@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,7 +60,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.latraverse.app.data.Concert
+import com.latraverse.app.data.ConcertRepository
 import com.latraverse.app.data.Concerts
+import com.latraverse.app.data.RemoteSource
 import com.latraverse.app.data.Venue
 import coil.compose.AsyncImage
 import com.latraverse.app.ui.theme.LaTraverseTheme
@@ -125,9 +129,21 @@ fun LaTraverseMainContent() {
 
     var tab by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
+    var concerts by remember { mutableStateOf(Concerts.all) }
+    var loading by remember { mutableStateOf(true) }
+    var lastUpdate by remember { mutableStateOf<String?>(null) }
 
-    val list = remember(query, tab) {
-        val base = if (tab == 0) Concerts.upcoming() else Concerts.past()
+    LaunchedEffect(Unit) {
+        val remote = RemoteSource.fetchUpcoming()
+        if (remote.isNotEmpty()) {
+            concerts = ConcertRepository.merge(Concerts.all, remote)
+            lastUpdate = ConcertRepository.nowLabel()
+        }
+        loading = false
+    }
+
+    val list = remember(query, tab, concerts) {
+        val base = if (tab == 0) ConcertRepository.upcoming(concerts) else ConcertRepository.past(concerts)
         val q = query.trim().lowercase()
         if (q.isEmpty()) base else base.filter {
             it.artist.lowercase().contains(q) ||
@@ -178,6 +194,22 @@ fun LaTraverseMainContent() {
         when {
             tab == 2 -> VenueInfoScreen(Modifier.padding(padding))
             else -> Column(Modifier.padding(padding).fillMaxSize()) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(28.dp),
+                        strokeWidth = 3.dp,
+                        color = TraverseYellow
+                    )
+                } else if (tab == 0 && lastUpdate != null) {
+                    Text(
+                        "Programmation mise à jour à $lastUpdate",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
