@@ -10,7 +10,8 @@ data class Concert(
     val genre: String,
     val support: String? = null,
     val description: String? = null,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val ticketUrl: String? = null
 ) {
     val isPast: Boolean
         get() = date.isBefore(LocalDate.now())
@@ -115,7 +116,8 @@ object Concerts {
             genre = "Blues",
             support = "Nina Attal",
             description = "Guitariste et chanteuse de blues texane, mêlant blues, rock, soul et country. Avec la française Nina Attal en première partie.",
-            imageUrl = SITE + "IMG/logo/carolyn_wonderland.png?1781010190"
+            imageUrl = SITE + "IMG/logo/carolyn_wonderland.png?1781010190",
+            ticketUrl = "https://billetterie.latraverse.org/agenda/26-Carolyn-Wonderland-Nina-Attal?session=26"
         ),
         Concert(
             artist = "Magma",
@@ -123,7 +125,8 @@ object Concerts {
             time = "20h30",
             genre = "Zeuhl / Rock progressif",
             description = "Tournée « Zeuhl Kommandöh » : Christian Vander et ses musiciens sur la scène de Cléon.",
-            imageUrl = SITE + "IMG/logo/plan_de_travail_2.png?1779976246"
+            imageUrl = SITE + "IMG/logo/plan_de_travail_2.png?1779976246",
+            ticketUrl = "https://billetterie.latraverse.org/agenda/31-MAGMA?session=31"
         ),
         Concert(
             artist = "Manu Lanvin",
@@ -132,7 +135,8 @@ object Concerts {
             genre = "Blues rock",
             support = "Little Odetta",
             description = "Le blues rock français de Manu Lanvin, avec Little Odetta en ouverture.",
-            imageUrl = SITE + "IMG/logo/photomanulanvin.png?1780650982"
+            imageUrl = SITE + "IMG/logo/photomanulanvin.png?1780650982",
+            ticketUrl = "https://billetterie.latraverse.org/agenda/30-Manu-LANVIN-Little-Odetta?session=30"
         ),
         Concert(
             artist = "FFF",
@@ -141,7 +145,8 @@ object Concerts {
             genre = "Groove rock",
             support = "LAKLÉ",
             description = "Le « fonck » français de FFF, date unique en Seine-Maritime de leur tournée 2026.",
-            imageUrl = SITE + "IMG/logo/fff.jpg?1765899069"
+            imageUrl = SITE + "IMG/logo/fff.jpg?1765899069",
+            ticketUrl = "https://billetterie.latraverse.org/agenda/32-FFF-Lakle?session=32"
         ),
         Concert(
             artist = "The Buttshakers + 24e Tremplin de la Traverse",
@@ -149,7 +154,8 @@ object Concerts {
             time = "15h30",
             genre = "Soul",
             description = "Le 24e Tremplin réunit des groupes normands en audition publique, suivi du concert soul et funk des Buttshakers.",
-            imageUrl = SITE + "IMG/logo/buttshakers.png?1782303637"
+            imageUrl = SITE + "IMG/logo/buttshakers.png?1782303637",
+            ticketUrl = "https://billetterie.latraverse.org/agenda/23-24eme-Tremplin-de-La-Traverse-The-Buttshakers?session=23"
         ),
         Concert(
             artist = "The Last Internationale",
@@ -157,7 +163,8 @@ object Concerts {
             time = "20h30",
             genre = "Rock USA",
             description = "Duo de rock new-yorkais aux performances live puissantes et aux textes engagés.",
-            imageUrl = SITE + "IMG/logo/263fa79b_tli_pic_2_wide_crop.jpg?1790842364"
+            imageUrl = SITE + "IMG/logo/263fa79b_tli_pic_2_wide_crop.jpg?1790842364",
+            ticketUrl = "https://billetterie.latraverse.org/share/event/49-THE-LAST-INTERNATIONALE"
         )
     )
 

@@ -335,8 +335,10 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(24.dp))
             if (!concert.isPast) {
-                ActionRow(Icons.Filled.Web, "Billetterie sur latraverse.org") {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Venue.WEBSITE)))
+                ActionRow(Icons.Filled.Web, "Réserver un billet") {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(concert.ticketUrl ?: Venue.WEBSITE))
+                    )
                 }
             }
             ActionRow(Icons.Filled.Map, "Itinéraire vers la salle") {

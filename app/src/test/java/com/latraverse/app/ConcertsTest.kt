@@ -51,4 +51,12 @@ class ConcertsTest {
             assertTrue(it.imageUrl!!.startsWith("https://www.latraverse.org/IMG/logo/"))
         }
     }
+
+    @Test
+    fun `every upcoming concert has a ticket reservation url`() {
+        Concerts.upcoming(today).forEach {
+            assertTrue(it.ticketUrl != null)
+            assertTrue(it.ticketUrl!!.startsWith("https://billetterie.latraverse.org/"))
+        }
+    }
 }
