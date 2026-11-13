@@ -46,6 +46,8 @@ import com.f1live.app.ui.screens.DriverProfileScreen
 import com.f1live.app.ui.screens.NewsScreen
 import com.f1live.app.ui.screens.RacesScreen
 import com.f1live.app.ui.screens.StandingsScreen
+import com.f1live.app.ui.screens.TeamProfileScreen
+import com.f1live.app.ui.screens.TeamCompareScreen
 import com.f1live.app.ui.theme.F1LiveTheme
 
 class MainActivity : ComponentActivity() {
@@ -68,6 +70,10 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val detailState by viewModel.raceDetail.collectAsStateWithLifecycle()
     val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
     val driverPhotoPath by viewModel.driverPhotoPath.collectAsStateWithLifecycle()
+    val constructorState by viewModel.constructorProfile.collectAsStateWithLifecycle()
+    val compareState by viewModel.compare.collectAsStateWithLifecycle()
+    var compareA by remember { mutableStateOf("") }
+    var compareB by remember { mutableStateOf("") }
     val liveState by viewModel.liveLaps.collectAsStateWithLifecycle()
     val newsState by viewModel.news.collectAsStateWithLifecycle()
     val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
@@ -200,7 +206,41 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     onDriverClick = { driverId, team ->
                         navController.navigate("driver/$driverId?team=$team")
                     },
+                    onTeamClick = { constructorId -> navController.navigate("constructor/$constructorId") },
+                    onCompareClick = {
+                        val teams = (standingsState as? com.f1live.app.ui.UiState.Success)?.data?.constructors.orEmpty()
+                        if (teams.size >= 2) {
+                            compareA = teams[0].Constructor.constructorId
+                            compareB = teams[1].Constructor.constructorId
+                            navController.navigate("compare/$compareA/$compareB")
+                        }
+                    },
                     lastUpdated = lastUpdated
+                )
+            }
+            composable("constructor/{constructorId}") { entry ->
+                val constructorId = entry.arguments?.getString("constructorId") ?: ""
+                LaunchedEffect(constructorId) { viewModel.loadConstructorProfile(constructorId) }
+                TeamProfileScreen(
+                    state = constructorState,
+                    onBack = { navController.popBackStack() },
+                    onRefresh = { viewModel.loadConstructorProfile(constructorId) },
+                    onDriverClick = { driverId, team -> navController.navigate("driver/$driverId?team=$team") }
+                )
+            }
+            composable("compare/{id1}/{id2}") { entry ->
+                val id1 = entry.arguments?.getString("id1") ?: ""
+                val id2 = entry.arguments?.getString("id2") ?: ""
+                val teams = (standingsState as? com.f1live.app.ui.UiState.Success)?.data?.constructors.orEmpty()
+                LaunchedEffect(id1, id2) { viewModel.loadCompare(id1, id2) }
+                TeamCompareScreen(
+                    teams = teams,
+                    state = compareState,
+                    id1 = id1,
+                    id2 = id2,
+                    onPick = { a, b -> navController.navigate("compare/$a/$b") { popUpTo("compare/{id1}/{id2}") { inclusive = true } } },
+                    onBack = { navController.popBackStack() },
+                    onRefresh = { viewModel.loadCompare(id1, id2) }
                 )
             }
             composable(

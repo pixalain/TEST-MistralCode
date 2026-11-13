@@ -11,11 +11,11 @@ import com.f1live.app.data.repository.DriverProfile
 import com.f1live.app.data.repository.F1Repository
 import com.f1live.app.data.repository.RaceDetail
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 sealed interface UiState<out T> {
     data object Loading : UiState<Nothing>
@@ -64,6 +64,37 @@ class F1ViewModel(
 
     private val _driverPhotoPath = MutableStateFlow<String?>(null)
     val driverPhotoPath: StateFlow<String?> = _driverPhotoPath.asStateFlow()
+
+    private val _constructorProfile = MutableStateFlow<UiState<com.f1live.app.data.repository.ConstructorProfile>>(UiState.Loading)
+    val constructorProfile: StateFlow<UiState<com.f1live.app.data.repository.ConstructorProfile>> = _constructorProfile.asStateFlow()
+
+    private val _compare = MutableStateFlow<UiState<List<com.f1live.app.data.repository.ConstructorRoundPoints>>>(UiState.Loading)
+    val compare: StateFlow<UiState<List<com.f1live.app.data.repository.ConstructorRoundPoints>>> = _compare.asStateFlow()
+
+    fun loadConstructorProfile(constructorId: String) {
+        _constructorProfile.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                _constructorProfile.value = UiState.Success(repository.constructorProfile(constructorId, _season.value))
+            } catch (e: Exception) {
+                _constructorProfile.value = UiState.Error(e.message ?: "Erreur écurie")
+            }
+        }
+    }
+
+    fun loadCompare(id1: String, id2: String) {
+        _compare.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                val season = _season.value
+                val a = async { repository.constructorPointsByRound(id1, season) }
+                val b = async { repository.constructorPointsByRound(id2, season) }
+                _compare.value = UiState.Success(listOf(a.await(), b.await()))
+            } catch (e: Exception) {
+                _compare.value = UiState.Error(e.message ?: "Erreur comparaison")
+            }
+        }
+    }
 
     private val _news = MutableStateFlow<UiState<NewsUi>>(UiState.Loading)
     val news: StateFlow<UiState<NewsUi>> = _news.asStateFlow()

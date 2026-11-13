@@ -78,4 +78,15 @@
     <string name="age_at_death">décédé à %1$d ans</string>
     <string name="died_on">décédé le %1$s</string>
     <string name="splash_tap_to_enter">Appuyez sur l\'écran pour entrer</string>
+    <string name="compare_teams">Comparer 2 écuries</string>
+    <string name="team_profile_title">Fiche écurie</string>
+    <string name="team_drivers">Pilotes titulaires</string>
+    <string name="team_recent_form">Forme récente (5 derniers GP)</string>
+    <string name="stat_podiums_team">Podiums</string>
+    <string name="stat_best_result">Meilleur résultat</string>
+    <string name="stat_constructor_titles">Titres constructeurs</string>
+    <string name="compare_pick_a">Écurie 1</string>
+    <string name="compare_pick_b">Écurie 2</string>
+    <string name="compare_chart_title">Points par manche — %1$s</string>
+    <string name="team_logo">Logo de l\'écurie</string>
 </resources>

@@ -5,6 +5,7 @@ import com.f1live.app.data.api.ApiClient
 import com.f1live.app.data.api.JolpicaService
 import com.f1live.app.data.model.AlphaEnvelope
 import com.f1live.app.data.model.AlphaResultRow
+import com.f1live.app.data.model.Constructor
 import com.f1live.app.data.model.ConstructorStanding
 import com.f1live.app.data.model.Driver
 import com.f1live.app.data.model.DriverStanding
@@ -218,6 +219,179 @@ class F1Repository(
                         resp.body?.byteStream()?.use { input ->
                             file.outputStream().use { output -> input.copyTo(output) }
                         } ?: throw java.io.IOException("empty body")
+                    }
+                }
+                file.takeIf { it.exists() && it.length() > 0L }
+            } catch (e: Exception) {
+                file.delete()
+                null
+            }
+        }
+
+
+    suspend fun constructorProfile(constructorId: String, season: String): ConstructorProfile = coroutineScope {
+        val effSeason = if (season == "current") {
+            runCatching { seasonSchedule("current").data.first }.getOrDefault("2026")
+        } else season
+        val constructorDeferred = async {
+            // name/nationality from constructor standings of that season
+            val cs = constructorStandings(effSeason)
+            cs.data.second.orEmpty().firstOrNull { it.Constructor.constructorId == constructorId }
+        }
+        val driversDeferred = async {
+            val ds = driverStandings(effSeason)
+            ds.data.second.filter { st -> st.Constructors.any { it.constructorId == constructorId } }
+        }
+        val resultsDeferred = async {
+            val all = mutableListOf<com.f1live.app.data.model.Race>()
+            var offset = 0
+            var total = Int.MAX_VALUE
+            while (offset < total && offset < 500) {
+                val raw = withRetry429 {
+                    if (effSeason == "current" || constructorId.isBlank()) service.constructorResults(constructorId, limit = 100, offset = offset)
+                    else service.seasonConstructorResults(effSeason, constructorId, limit = 100, offset = offset)
+                }
+                val page = F1Json.races(raw)
+                total = F1Json.total(raw)?.toIntOrNull() ?: page.raceTable.Races.size
+                all.addAll(page.raceTable.Races)
+                if (page.raceTable.Races.isEmpty()) break
+                offset += page.raceTable.Races.size
+            }
+            all
+        }
+        val titlesDeferred = async {
+            // count constructor titles since 2018 (one standings call per season)
+            var count = 0
+            val currentYear = java.time.Year.now().value
+            for (year in currentYear downTo 2018) {
+                try {
+                    val cs = constructorStandings(year.toString())
+                    val champion = cs.data.second.orEmpty().minByOrNull { it.position?.toIntOrNull() ?: 99 }
+                    if (champion?.Constructor?.constructorId == constructorId) count++
+                } catch (e: Exception) { }
+            }
+            count
+        }
+
+        val standing = constructorDeferred.await()
+        val drivers = driversDeferred.await()
+        val races = resultsDeferred.await().distinctBy { it.season to it.round }.sortedWith(compareBy({ it.season }, { it.round.toIntOrNull() ?: 0 }))
+        val titles = titlesDeferred.await()
+
+        var wins = 0
+        var podiums = 0
+        var best: Pair<Int, String>? = null
+        val roundPoints = mutableListOf<Pair<String, Double>>()
+        for (r in races) {
+            val pts = r.Results.orEmpty()
+                .filter { it.Constructor?.constructorId == constructorId }
+                .sumOf { it.points?.toDoubleOrNull() ?: 0.0 }
+            roundPoints.add("R${r.round} ${r.raceName}" to pts)
+            for (res in r.Results.orEmpty().filter { it.Constructor?.constructorId == constructorId }) {
+                val pos = res.position?.toIntOrNull()
+                if (pos == 1) wins++
+                if (pos != null && pos <= 3) podiums++
+                if (pos != null && (best == null || pos < best!!.first)) best = pos to r.raceName
+            }
+        }
+
+        val logo = runCatching { constructorLogoUrl(standing?.Constructor ?: com.f1live.app.data.model.Constructor(constructorId, "", null)) }.getOrNull()
+        val logoFile = logo?.let { runCatching { downloadConstructorLogo(standing?.Constructor ?: com.f1live.app.data.model.Constructor(constructorId, "", null), it)?.absolutePath }.getOrNull() }
+
+        ConstructorProfile(
+            constructor = standing?.Constructor ?: com.f1live.app.data.model.Constructor(constructorId, "", null),
+            season = effSeason,
+            points = standing?.points,
+            position = standing?.position ?: standing?.positionText,
+            wins = wins,
+            podiums = podiums,
+            bestResult = best?.let { "P${it.first} · ${it.second}" },
+            titles = titles,
+            drivers = drivers.sortedBy { it.position?.toIntOrNull() ?: 99 },
+            recentForm = roundPoints.takeLast(5),
+            logoUrl = logo,
+            logoPath = logoFile
+        )
+    }
+
+    suspend fun constructorPointsByRound(constructorId: String, season: String): ConstructorRoundPoints {
+        val effSeason = if (season == "current") "current" else season
+        val all = mutableListOf<com.f1live.app.data.model.Race>()
+        var offset = 0
+        var total = Int.MAX_VALUE
+        while (offset < total && offset < 500) {
+            val raw = withRetry429 {
+                if (effSeason == "current") service.constructorResults(constructorId, limit = 100, offset = offset)
+                else service.seasonConstructorResults(effSeason, constructorId, limit = 100, offset = offset)
+            }
+            val page = F1Json.races(raw)
+            total = F1Json.total(raw)?.toIntOrNull() ?: page.raceTable.Races.size
+            all.addAll(page.raceTable.Races)
+            if (page.raceTable.Races.isEmpty()) break
+            offset += page.raceTable.Races.size
+        }
+        val name = constructorStandings(if (season == "current") "current" else season).data.second
+            .firstOrNull { it.Constructor.constructorId == constructorId }?.Constructor?.name ?: constructorId
+        val rounds = all.distinctBy { it.season to it.round }.sortedWith(compareBy({ it.season }, { it.round.toIntOrNull() ?: 0 }))
+            .map { r ->
+                val pts = r.Results.orEmpty().filter { it.Constructor?.constructorId == constructorId }
+                    .sumOf { it.points?.toDoubleOrNull() ?: 0.0 }
+                "R${r.round}" to pts
+            }
+        return ConstructorRoundPoints(constructorId, name, rounds)
+    }
+
+    suspend fun constructorLogoUrl(constructor: com.f1live.app.data.model.Constructor): String? {
+        val cacheKey = "clogo_" + constructor.constructorId
+        cache?.load(cacheKey)?.let { (raw, _) -> return raw.ifBlank { null } }
+        TEAM_LOGOS[constructor.constructorId]?.let {
+            cache?.save(cacheKey, it)
+            return it
+        }
+        for (lang in listOf("commons.wikimedia.org", "en.wikipedia.org", "fr.wikipedia.org")) {
+            try {
+                val host = if (lang == "commons.wikimedia.org") "https://commons.wikimedia.org" else "https://$lang"
+                val ns = if (lang == "commons.wikimedia.org") 6 else 0
+                val search = "$host/w/api.php?action=query&list=search&srsearch=" +
+                    java.net.URLEncoder.encode(constructor.name + " logo filetype:bitmap", "UTF-8") +
+                    "&srnamespace=$ns&format=json&srlimit=10"
+                val raw = withRetry429 { ApiClient.wikipedia.pageImages(search) }
+                val titles = raw["query"]?.jsonObject?.get("search")?.jsonArray
+                    ?.mapNotNull { it.jsonObject["title"]?.jsonPrimitive?.content } ?: emptyList()
+                val logoTitle = titles.firstOrNull { t ->
+                    val tl = t.lowercase()
+                    tl.contains("logo") && (tl.endsWith(".png") || tl.endsWith(".jpg") || tl.endsWith(".jpeg"))
+                } ?: continue
+                val img = "$host/w/api.php?action=query&titles=" +
+                    java.net.URLEncoder.encode(logoTitle, "UTF-8") +
+                    "&prop=imageinfo&iiprop=url&format=json"
+                val imgRaw = withRetry429 { ApiClient.wikipedia.pageImages(img) }
+                parseWikipediaPhoto(imgRaw)?.let {
+                    cache?.save(cacheKey, it)
+                    return it
+                }
+            } catch (e: Exception) { }
+        }
+        cache?.save(cacheKey, "")
+        return null
+    }
+
+    suspend fun downloadConstructorLogo(constructor: com.f1live.app.data.model.Constructor, url: String): java.io.File? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val file = cache?.let { c ->
+                val f = java.io.File(c.appContextForCache().cacheDir, "clogos/${constructor.constructorId}.img")
+                f.parentFile?.mkdirs()
+                f
+            } ?: return@withContext null
+            if (file.exists() && file.length() > 0L) return@withContext file
+            try {
+                withRetry429 {
+                    ApiClient.plain.newCall(
+                        okhttp3.Request.Builder().url(url).header("User-Agent", "F1LiveApp/1.0").build()
+                    ).execute().use { resp ->
+                        if (!resp.isSuccessful) throw java.io.IOException("HTTP " + resp.code)
+                        resp.body?.byteStream()?.use { input -> file.outputStream().use { input.copyTo(it) } }
+                            ?: throw java.io.IOException("empty body")
                     }
                 }
                 file.takeIf { it.exists() && it.length() > 0L }

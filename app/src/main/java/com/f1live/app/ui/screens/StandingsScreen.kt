@@ -51,6 +51,8 @@ fun StandingsScreen(
     state: UiState<StandingsUi>,
     onRefresh: () -> Unit,
     onDriverClick: (String, String?) -> Unit = { _, _ -> },
+    onTeamClick: (String) -> Unit = {},
+    onCompareClick: () -> Unit = {},
     lastUpdated: Long? = null
 ) {
     var tab by remember { mutableIntStateOf(0) }
@@ -90,9 +92,20 @@ fun StandingsScreen(
                     ) {
                         item {
                             SeasonHeader(state.data.season, state.fromCache, lastUpdated)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                androidx.compose.material3.TextButton(onClick = onCompareClick) {
+                                    Text(stringResource(R.string.compare_teams))
+                                }
+                            }
                         }
                         items(state.data.constructors, key = { it.Constructor.constructorId }) { c ->
-                            TeamRow(c)
+                            val teamDrivers = state.data.drivers.filter { d ->
+                                d.Constructors.any { it.constructorId == c.Constructor.constructorId }
+                            }
+                            TeamRow(c, teamDrivers, onClick = { onTeamClick(c.Constructor.constructorId) })
                         }
                     }
                 }
@@ -194,9 +207,15 @@ private fun DriverRow(d: DriverStanding, onClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun TeamRow(c: ConstructorStanding) {
+private fun TeamRow(
+    c: ConstructorStanding,
+    teamDrivers: List<com.f1live.app.data.model.DriverStanding> = emptyList(),
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -229,6 +248,15 @@ private fun TeamRow(c: ConstructorStanding) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (teamDrivers.isNotEmpty()) {
+                    Text(
+                        text = teamDrivers.joinToString(" · ") { d ->
+                            "${d.Driver.familyName} ${d.points}"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             if (!c.wins.isNullOrBlank() && c.wins != "0") {
                 Icon(

@@ -96,6 +96,28 @@ interface JolpicaService {
     @GET("ergast/f1/seasons.json")
     suspend fun seasons(@Query("limit") limit: Int = 100): JsonObject
 
+    @GET("ergast/f1/constructors/{constructorId}/results.json")
+    suspend fun constructorResults(
+        @Path("constructorId") constructorId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
+    ): JsonObject
+
+    @GET("ergast/f1/{season}/constructors/{constructorId}/results.json")
+    suspend fun seasonConstructorResults(
+        @Path("season") season: String,
+        @Path("constructorId") constructorId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
+    ): JsonObject
+
+    @GET("ergast/f1/constructors/{constructorId}/standings.json")
+    suspend fun constructorStandingsHistory(
+        @Path("constructorId") constructorId: String,
+        @Query("limit") limit: Int = 100,
+        @Query("offset") offset: Int = 0
+    ): JsonObject
+
     @GET("ergast/f1/drivers/{driverId}.json")
     suspend fun driverInfo(@Path("driverId") driverId: String): JsonObject
 

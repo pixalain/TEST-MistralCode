@@ -29,6 +29,8 @@ class F1Cache(context: Context) {
 
     private val appContext = context.applicationContext
 
+    fun appContextForCache(): android.content.Context = appContext
+
     fun photoFileFor(driverId: String): java.io.File =
         java.io.File(appContext.cacheDir, "photos/$driverId.jpg").apply {
             parentFile?.mkdirs()
