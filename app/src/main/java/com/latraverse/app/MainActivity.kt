@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upcoming
@@ -59,6 +62,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.latraverse.app.data.ArchiveRepository
 import com.latraverse.app.data.Concert
 import com.latraverse.app.data.ConcertRepository
 import com.latraverse.app.data.Concerts
@@ -94,19 +98,31 @@ fun LaTraverseApp() {
 
 @Composable
 fun SplashScreen(onDismiss: () -> Unit) {
+    val dark = androidx.compose.foundation.isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            AsyncImage(
-                model = "https://www.latraverse.org/IMG/logo/logo_traverse_2025_noir.png?1756828759",
-                contentDescription = "La Traverse",
-                error = painterResource(R.mipmap.ic_launcher_foreground),
-                modifier = Modifier.size(220.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(240.dp)
+                    .background(
+                        if (dark) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Transparent,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = "https://www.latraverse.org/IMG/logo/logo_traverse_2025_noir.png?1756828759",
+                    contentDescription = "La Traverse",
+                    error = painterResource(R.mipmap.ic_launcher_foreground),
+                    modifier = Modifier.size(200.dp)
+                )
+            }
             Spacer(Modifier.height(24.dp))
             Text(
                 "TOUCHEZ POUR ENTRER",
@@ -129,14 +145,18 @@ fun LaTraverseMainContent() {
 
     var tab by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
+    val context = LocalContext.current
     var concerts by remember { mutableStateOf(Concerts.all) }
     var loading by remember { mutableStateOf(true) }
     var lastUpdate by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        val archive = ArchiveRepository.load(context)
+        val base = ConcertRepository.withArchive(Concerts.all, archive)
+        concerts = base
         val remote = RemoteSource.fetchUpcoming()
         if (remote.isNotEmpty()) {
-            concerts = ConcertRepository.merge(Concerts.all, remote)
+            concerts = ConcertRepository.merge(base, remote)
             lastUpdate = ConcertRepository.nowLabel()
         }
         loading = false
@@ -262,6 +282,9 @@ fun ConcertCard(concert: Concert, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -318,6 +341,14 @@ fun ConcertCard(concert: Concert, onClick: () -> Unit) {
 @Composable
 fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
     val context = LocalContext.current
+    var details by remember { mutableStateOf<RemoteSource.EventDetails?>(null) }
+
+    LaunchedEffect(concert.eventUrl) {
+        if (concert.eventUrl != null) {
+            details = RemoteSource.fetchEventDetails(concert.eventUrl)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -337,15 +368,28 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
         ) {
             if (concert.imageUrl != null) {
-                AsyncImage(
-                    model = concert.imageUrl,
-                    contentDescription = concert.artist,
-                    contentScale = ContentScale.Crop,
-                    error = painterResource(R.mipmap.ic_launcher_foreground),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                )
+                Box {
+                    AsyncImage(
+                        model = concert.imageUrl,
+                        contentDescription = concert.artist,
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(R.mipmap.ic_launcher_foreground),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                    )
+                    if (details?.photoCredit != null) {
+                        Text(
+                            details!!.photoCredit!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
             }
             Column(Modifier.padding(20.dp)) {
             Text(
@@ -361,9 +405,21 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
                 Spacer(Modifier.height(6.dp))
                 Text("Première partie : ${concert.support}")
             }
-            if (concert.description != null) {
+            val fullDescription = details?.description ?: concert.description
+            if (fullDescription != null) {
                 Spacer(Modifier.height(12.dp))
-                Text(concert.description, style = MaterialTheme.typography.bodyMedium)
+                Text(fullDescription, style = MaterialTheme.typography.bodyMedium)
+            }
+            if (details?.youtubeId != null) {
+                Spacer(Modifier.height(8.dp))
+                ActionRow(Icons.Filled.PlayArrow, "Voir la vidéo de l'artiste") {
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://www.youtube.com/watch?v=${details!!.youtubeId}")
+                        )
+                    )
+                }
             }
             Spacer(Modifier.height(24.dp))
             if (!concert.isPast) {

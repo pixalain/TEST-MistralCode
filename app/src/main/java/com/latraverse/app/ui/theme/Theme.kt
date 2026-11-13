@@ -11,7 +11,7 @@ val TraverseYellow = Color(0xFFECB31E)
 val TraverseBlack = Color(0xFF000000)
 val TraverseWhite = Color(0xFFFFFFFF)
 val TraverseGrey = Color(0xFF515151)
-val TraverseDarkSurface = Color(0xFF121212)
+val TraverseDarkSurface = Color(0xFF1C1C1E)
 
 private val DarkColors = darkColorScheme(
     primary = TraverseYellow,
@@ -24,8 +24,8 @@ private val DarkColors = darkColorScheme(
     onBackground = TraverseWhite,
     surface = TraverseDarkSurface,
     onSurface = TraverseWhite,
-    surfaceVariant = Color(0xFF1F1F1F),
-    onSurfaceVariant = Color(0xFFC6C6C6),
+    surfaceVariant = Color(0xFF2C2C2E),
+    onSurfaceVariant = Color(0xFFC6C6C8),
     outline = Color(0xFF515151)
 )
 
@@ -43,6 +43,8 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Color(0xFFF2F2F2),
     onSurfaceVariant = TraverseGrey,
     outline = Color(0xFFC6C6C6)
+
+// Slight tweak for light cards to stay white on the grey list background
 )
 
 @Composable

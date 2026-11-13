@@ -22,6 +22,10 @@ object RemoteSource {
     private val TIME = Regex("<span class=\"heure\">([^<]+)</span>")
     private val GENRE = Regex("<span class=\"genre\">([^<]*)</span>")
     private val BUY = Regex("bouton-acheter\" href=\"([^\"]+)\"")
+    private val EVENT_HREF = Regex("""<a href="([^"]+)"><div class="vignetteimage""")
+    private val EVENT_TEXT = Regex("""<span class="texte">([\s\S]*?)</span>""")
+    private val PHOTO_CREDIT = Regex("""<span class="credit">([\s\S]*?)</span>""")
+    private val YOUTUBE = Regex("""youtube\.com/embed/([A-Za-z0-9_-]{11})""")
 
     private val MONTHS = mapOf(
         "janvier" to 1, "février" to 2, "fevrier" to 2, "mars" to 3, "avril" to 4,
@@ -53,6 +57,7 @@ object RemoteSource {
             val genre = decode(GENRE.find(content)?.groupValues?.get(1) ?: "").trim().ifEmpty { null }
             val image = IMG.find(content)?.groupValues?.get(1)?.let { SITE + it }
             val ticket = BUY.find(content)?.groupValues?.get(1)
+            val eventUrl = EVENT_HREF.find(content)?.groupValues?.get(1)?.let { SITE + it }
             Concert(
                 artist = artist,
                 date = date,
@@ -61,9 +66,53 @@ object RemoteSource {
                 support = support,
                 description = null,
                 imageUrl = image,
-                ticketUrl = ticket
+                ticketUrl = ticket,
+                eventUrl = eventUrl
             )
         }.sortedBy { it.date }.toList()
+
+    data class EventDetails(
+        val description: String?,
+        val photoCredit: String?,
+        val youtubeId: String?
+    )
+
+    suspend fun fetchEventDetails(eventUrl: String): EventDetails = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = okhttp3.Request.Builder().url(eventUrl).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext EventDetails(null, null, null)
+                val html = response.body?.string() ?: return@withContext EventDetails(null, null, null)
+                parseEventDetails(html)
+            }
+        }.getOrElse { EventDetails(null, null, null) }
+    }
+
+    fun parseEventDetails(html: String): EventDetails {
+        val description = EVENT_TEXT.find(html)?.groupValues?.get(1)?.let { htmlToText(it) }
+        val credit = PHOTO_CREDIT.find(html)?.groupValues?.get(1)?.let { htmlToText(it) }?.trim()
+        val youtube = YOUTUBE.find(html)?.groupValues?.get(1)
+        return EventDetails(description, credit?.ifEmpty { null }, youtube)
+    }
+
+    internal fun htmlToText(html: String): String = html
+        .replace(Regex("<br[^>]*>"), "\n")
+        .replace("</p>", "\n\n")
+        .replace(Regex("<[^>]+>"), "")
+        .replace("&amp;", "&")
+        .replace("&nbsp;", " ")
+        .replace("&laquo;", "«")
+        .replace("&raquo;", "»")
+        .replace("&eacute;", "é")
+        .replace("&egrave;", "è")
+        .replace("&ecirc;", "ê")
+        .replace("&agrave;", "à")
+        .replace("&ocirc;", "ô")
+        .replace("&#8217;", "'")
+        .replace("&#171;", "«")
+        .replace("&#187;", "»")
+        .replace(Regex("\n{3,}"), "\n\n")
+        .trim()
 
     internal fun parseDate(raw: String): LocalDate? {
         val m = Regex("(\\d{1,2})\\s+([a-zéûè]+)\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(raw.trim())
@@ -92,6 +141,11 @@ object RemoteSource {
 object ConcertRepository {
 
     private fun key(c: Concert) = c.date.toString() + "|" + c.artist.lowercase().trim()
+
+    fun withArchive(bundled: List<Concert>, archive: List<Concert>): List<Concert> {
+        val keys = bundled.map { key(it) }.toSet()
+        return bundled + archive.filter { key(it) !in keys }
+    }
 
     fun merge(bundled: List<Concert>, remote: List<Concert>, today: LocalDate = LocalDate.now()): List<Concert> {
         val past = bundled.filter { it.date.isBefore(today) }

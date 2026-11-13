@@ -5,15 +5,15 @@ Application Android (non officielle) pour suivre la programmation de **La Traver
 ## Fonctionnalités
 
 - **Programmation dynamique** : à chaque lancement, l'app récupère les concerts à venir depuis [latraverse.org/Agenda](https://www.latraverse.org/Agenda) (date, artiste, première partie, heure, genre, photo, lien billetterie)
-- **Concerts passés** : archives des concerts des saisons 2025-2026 intégrées
+- **Concerts passés** : archives complètes intégrées — **537 concerts depuis 2006** (`assets/archive.json`), avec photos et genres
 - **Recherche** par artiste, première partie ou genre
-- **Détail d'un concert** : date, heure, genre, description, accès direct à la billetterie et à l'itinéraire
+- **Détail enrichi** : description complète de l'événement (chargée depuis sa page officielle), crédit photo, vidéo YouTube de l'artiste, accès direct à la billetterie et à l'itinéraire
 - **Infos salle** : adresse, téléphone, site officiel
 - Recherche et tri automatiques selon la date du jour (passé / à venir)
 
 ## Données
 
-La liste des concerts passés est intégrée dans l'app (`app/src/main/java/com/latraverse/app/data/Concert.kt`). Les concerts à venir sont récupérés en direct depuis la page Agenda du site officiel (`RemoteSource.kt`) ; la liste intégrée sert de repli hors ligne.
+L'archive complète des concerts passés (537 événements depuis 2006) est intégrée dans `assets/archive.json`. Les concerts à venir sont récupérés en direct depuis la page Agenda du site officiel (`RemoteSource.kt`) ; la liste intégrée sert de repli hors ligne.
 
 ## Charte graphique
 

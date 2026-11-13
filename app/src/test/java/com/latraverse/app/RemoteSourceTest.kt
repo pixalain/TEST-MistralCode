@@ -95,4 +95,35 @@ class RemoteSourceTest {
         assertEquals("Artist C autre heure", upcoming[1].artist)
         assertEquals(1, past.size)
     }
+
+    @Test
+    fun `withArchive adds archive concerts not already bundled`() {
+        val bundled = listOf(
+            Concert("Old", LocalDate.of(2025, 12, 6), "20h30", "Blues")
+        )
+        val archive = listOf(
+            Concert("Old", LocalDate.of(2025, 12, 6), "20h30", "Blues"),
+            Concert("Archive 2010", LocalDate.of(2010, 3, 12), "21h00", "Rock")
+        )
+        val merged = ConcertRepository.withArchive(bundled, archive)
+        assertEquals(2, merged.size)
+        assertTrue(merged.any { it.artist == "Archive 2010" })
+    }
+
+    @Test
+    fun `parses event details description, credit and youtube id`() {
+        val html = """
+            <span class="credit"><span class="crayon article-credit_photo-850">Photo © Mary Bruton</span></span>
+            <div id="spectacle1">
+                <span class="texte"><span class="crayon article-texte-850"><p><strong>Chants d&rsquo;elles</strong>&nbsp;: Guitar Women&rsquo;s Night&nbsp;!</p>
+                <p>Une musique soul originale, teint&eacute;e de blues.</p></span></span>
+            </div>
+            <iframe src="https://www.youtube.com/embed/pzlK-oZf6PY?si=x" title="YouTube video player"></iframe>
+        """.trimIndent()
+        val d = RemoteSource.parseEventDetails(html)
+        assertTrue(d.description!!.contains("Guitar Women"))
+        assertTrue(d.description.contains("soul originale"))
+        assertEquals("Photo © Mary Bruton", d.photoCredit)
+        assertEquals("pzlK-oZf6PY", d.youtubeId)
+    }
 }
