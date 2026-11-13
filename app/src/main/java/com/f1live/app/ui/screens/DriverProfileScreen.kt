@@ -111,11 +111,15 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
     ) {
         item {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -156,7 +160,9 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
                     Text(
                         text = "${d.givenName} ${d.familyName}".uppercase(),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     val death = profile.deathDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
                     Text(
@@ -180,14 +186,18 @@ private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
                         Text(
                             text = stringResource(R.string.born_on, formatBirthDate(it)),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                     if (death != null) {
                         Text(
                             text = stringResource(R.string.died_on, formatBirthDate(death.toString())),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                     s.currentTeam?.let {
