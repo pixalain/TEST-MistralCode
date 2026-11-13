@@ -106,10 +106,14 @@ object ConcertRepository {
     }
 
     fun upcoming(all: List<Concert>, today: LocalDate = LocalDate.now()): List<Concert> =
-        all.filter { !it.date.isBefore(today) }.sortedBy { it.date }
+        all.filter { !it.date.isBefore(today) }
+            .distinctBy { it.date.toString() + "|" + it.time }
+            .sortedBy { it.date }
 
     fun past(all: List<Concert>, today: LocalDate = LocalDate.now()): List<Concert> =
-        all.filter { it.date.isBefore(today) }.sortedByDescending { it.date }
+        all.filter { it.date.isBefore(today) }
+            .distinctBy { it.date.toString() + "|" + it.time }
+            .sortedByDescending { it.date }
 
     fun nowLabel(): String =
         java.time.LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))

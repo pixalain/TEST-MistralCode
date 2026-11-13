@@ -104,7 +104,7 @@ fun SplashScreen(onDismiss: () -> Unit) {
             AsyncImage(
                 model = "https://www.latraverse.org/IMG/logo/logo_traverse_2025_noir.png?1756828759",
                 contentDescription = "La Traverse",
-                error = painterResource(R.drawable.ic_launcher_foreground),
+                error = painterResource(R.mipmap.ic_launcher_foreground),
                 modifier = Modifier.size(220.dp)
             )
             Spacer(Modifier.height(24.dp))
@@ -341,7 +341,7 @@ fun ConcertDetailScreen(concert: Concert, onBack: () -> Unit) {
                     model = concert.imageUrl,
                     contentDescription = concert.artist,
                     contentScale = ContentScale.Crop,
-                    error = painterResource(R.drawable.ic_launcher_foreground),
+                    error = painterResource(R.mipmap.ic_launcher_foreground),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)

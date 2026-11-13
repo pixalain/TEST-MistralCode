@@ -77,4 +77,22 @@ class RemoteSourceTest {
         assertTrue(merged.any { it.artist == "Old" })
         assertTrue(merged.any { it.artist == "Local Only" })
     }
+
+    @Test
+    fun `upcoming and past lists drop concerts sharing the same date and time`() {
+        val today = LocalDate.of(2026, 11, 13)
+        val all = listOf(
+            Concert("Artist A", LocalDate.of(2026, 11, 13), "20h30", "Blues"),
+            Concert("Artist B (doublon)", LocalDate.of(2026, 11, 13), "20h30", "Rock"),
+            Concert("Artist C autre heure", LocalDate.of(2026, 11, 13), "18h00", "Jazz"),
+            Concert("Old 1", LocalDate.of(2025, 12, 6), "20h30", "Blues"),
+            Concert("Old 2 (doublon)", LocalDate.of(2025, 12, 6), "20h30", "Soul")
+        )
+        val upcoming = ConcertRepository.upcoming(all, today)
+        val past = ConcertRepository.past(all, today)
+        assertEquals(2, upcoming.size)
+        assertEquals("Artist A", upcoming[0].artist)
+        assertEquals("Artist C autre heure", upcoming[1].artist)
+        assertEquals(1, past.size)
+    }
 }
