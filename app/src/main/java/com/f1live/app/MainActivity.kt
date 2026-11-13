@@ -24,6 +24,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
@@ -98,6 +100,12 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     )
     val scope = rememberCoroutineScope()
     val season by viewModel.season.collectAsStateWithLifecycle()
+    var showSplash by remember { mutableStateOf(true) }
+
+    if (showSplash) {
+        com.f1live.app.ui.screens.SplashScreen(onDismiss = { showSplash = false })
+        return
+    }
 
     androidx.compose.material3.ModalNavigationDrawer(
         drawerState = drawerState,
