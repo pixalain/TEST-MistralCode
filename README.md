@@ -1,74 +1,37 @@
-# F1 Live
+# La Traverse — Cléon 🎸
 
-Application Android (Kotlin + Jetpack Compose) pour suivre la Formule 1 en temps réel :
+Application Android (non officielle) pour suivre la programmation de **La Traverse**, la salle de concerts de Cléon (76410), près de Rouen.
 
-- **Onglet « Actus »** : 10 news du dernier GP et 10 du prochain GP, en français (flux RSS Motorsport.com FR, F1Only, AutoHebdo), filtrage par nom du GP, mise en cache
-- **Photo du pilote** sur sa fiche (Wikipedia/Wikimedia, mise en cache)
-- **Multi-saisons** : sélecteur d'année dans la barre du haut (1950 → saison en cours) pour classements, calendrier et résultats de GP
-- **Classement des pilotes** (points, victoires, écurie)
-- **Fiche pilote** en cliquant sur un pilote : nom, âge, nationalité, écurie actuelle, palmarès complet (victoires, poles, podiums, tours rapides, points, saisons, meilleur championnat, titres) et derniers résultats
-- **Classement des écuries** (constructors)
-- **Calendrier de la saison en cours** avec statut Terminé / À venir
-- **Détail de chaque GP avec onglets dynamiques** : FP1, FP2, FP3, Qualifs, Sprint Qualifs, Sprint, Course — résultats complets (position, pilote, écurie, meilleur temps, tours) via l'API alpha de Jolpica (`/f1/alpha/results/{round}/{session}/`)
-- **Résultats complets de chaque Grand Prix** (course et sprint), avec temps et points
-- **Onglet « Grille de départ »** dans chaque GP + **places gagnées/perdues** (+3 / -2 / =) à côté de chaque pilote du classement
+## Fonctionnalités
 
-Les données proviennent de l'API ouverte [Jolpica F1](https://github.com/jolpica/jolpica-f1)
-(successeur de l'API Ergast) : `https://api.jolpi.ca/ergast/f1/current/...`
+- **Concerts à venir** : toute la programmation à venir, triée par date
+- **Concerts passés** : archives des concerts des saisons 2025-2026
+- **Recherche** par artiste, première partie ou genre
+- **Détail d'un concert** : date, heure, genre, description, accès direct à la billetterie et à l'itinéraire
+- **Infos salle** : adresse, téléphone, site officiel
+- Recherche et tri automatiques selon la date du jour (passé / à venir)
 
-## Installation sur Android
+## Données
 
-1. Téléchargez l'APK signé : **[app-release.apk](https://raw.githubusercontent.com/pixalain/TEST-MistralCode/vibe/f1-live-app-bae9bb/releases/app-release.apk)**
-   ( branche `vibe/f1-live-app-bae9bb`, dossier `releases/` ; l'artifact `f1live-apk` est aussi disponible dans l'onglet **Actions** du dépôt ).
-2. Ouvrez-le sur votre téléphone Android (Android 8.0 / API 26 minimum).
-3. Si demandé, autorisez l'installation depuis cette source ("Sources inconnues").
-4. Ouvrez **F1 Live**.
+La liste des concerts est intégrée dans l'app (`app/src/main/java/com/latraverse/app/data/Concert.kt`), pré-remplie avec la programmation réelle de la salle (saison 2025-2026 et premières dates 2027). Ajouter un concert = ajouter une entrée dans la liste `Concerts.all`.
 
-Alternative pour les développeurs :
+## Charte graphique
+
+L'app reprend la charte du site [latraverse.org](https://www.latraverse.org/) :
+- Fond blanc / noir, accent **jaune #ECB31E**
+- Titres en capitales, typographie condensée
+- Logo losange
+
+## Build
 
 ```bash
-git clone <repo-url>
-cd <repo>
-./gradlew installDebug   # avec un téléphone/émulateur connecté (adb)
+./gradlew assembleRelease
 ```
 
-## Développement
+APK : `app/build/outputs/apk/release/`. Un workflow GitHub Actions (`.github/workflows/android.yml`) construit et téléverse l'APK à chaque push ; les releases signées sont publiées sur les tags `v*`.
 
-```bash
-./gradlew assembleDebug      # APK de debug
-./gradlew assembleRelease    # APK release (signé si f1-signing.properties présent)
-./gradlew testDebugUnitTest  # tests unitaires
-```
+## Renseignements
 
-## 🆕 Widget & Live
-- **Widget d'accueil** (Glance) : prochain GP (nom, circuit, date/heure locale) + top 3 du championnat, rafraîchi toutes les 15 min via WorkManager et au boot
-- **Onglet « Live »** dans le détail du GP quand la course a des résultats : classement au dernier tour avec temps de tour, 🏁 meilleur tour, auto-refresh 30 s
-- **Cache hors-ligne** : classements/calendrier/détail GP conservés localement avec badge « Mis à jour à … » / « ⚠ Hors ligne — données du … »
-- **Notifications** : rappels 30 min avant FP1, Qualifs, Sprint et Course (WorkManager, reprogrammés au boot)
+La Traverse — 37 rue Luis Corvalan, 76410 Cléon — 02 35 81 25 25 — [latraverse.org](https://www.latraverse.org/)
 
-## 🔒 Sécurité
-- Trafic **HTTPS uniquement** : `usesCleartextTraffic=false` + `network_security_config.xml` (cleartext interdit partout, ancres système uniquement)
-- **Aucune permission dangereuse** : seule `INTERNET` (la permission réseau inutile a été retirée)
-- `allowBackup=false` + règles d'extraction cloud/device vides (aucune donnée sauvegardée)
-- Un seul composant exporté : l'activité launcher (aucun deep link, pas de WebView)
-- Release minifié (R8) + ressources shrinkées ; **logs HTTP uniquement en debug** (`BuildConfig.DEBUG`), jamais en release
-- Signature release via variables d'environnement/CI — **aucun keystore ni mot de passe dans le dépôt** (`.gitignore` : `*.jks`, `f1-signing.properties`)
-- `apksigner verify` OK sur l'APK publié
-
-Stack : Kotlin 2.0, Jetpack Compose + Material 3, Navigation Compose, Retrofit/OkHttp,
-kotlinx.serialization, Coil. AGP 8.7.3, Gradle 8.9, compileSdk 35, minSdk 26.
-
-## Structure
-
-```
-app/src/main/java/com/f1live/app/
-├── MainActivity.kt                  # navigation + bottom bar
-├── data/
-│   ├── api/JolpicaService.kt        # endpoints Retrofit (Jolpica/Ergast)
-│   ├── model/Models.kt              # modèles sérialisables
-│   └── repository/F1Repository.kt   # accès données
-└── ui/
-    ├── F1ViewModel.kt               # état des écrans
-    ├── screens/                     # Classements, GP, Détail GP
-    └── theme/                       # thème Material 3
-```
+Application fan, non officielle, sans affiliation avec La Traverse.
