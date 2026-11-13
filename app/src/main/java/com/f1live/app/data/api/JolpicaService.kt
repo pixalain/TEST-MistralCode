@@ -157,6 +157,14 @@ interface WikidataService {
 
 object ApiClient {
 
+    val plain: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
+
     val wikipedia: WikipediaService by lazy {
         Retrofit.Builder()
             .baseUrl("https://en.wikipedia.org/")

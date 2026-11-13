@@ -62,6 +62,9 @@ class F1ViewModel(
     private val _liveLaps = MutableStateFlow<UiState<com.f1live.app.data.repository.LiveLaps>>(UiState.Loading)
     val liveLaps: StateFlow<UiState<com.f1live.app.data.repository.LiveLaps>> = _liveLaps.asStateFlow()
 
+    private val _driverPhotoPath = MutableStateFlow<String?>(null)
+    val driverPhotoPath: StateFlow<String?> = _driverPhotoPath.asStateFlow()
+
     private val _news = MutableStateFlow<UiState<NewsUi>>(UiState.Loading)
     val news: StateFlow<UiState<NewsUi>> = _news.asStateFlow()
 
@@ -169,10 +172,16 @@ class F1ViewModel(
 
     fun loadDriver(driverId: String, currentTeam: String? = null) {
         _driverProfile.value = UiState.Loading
+        _driverPhotoPath.value = null
         viewModelScope.launch {
             try {
-                _driverProfile.value = UiState.Success(repository.driverProfile(driverId, currentTeam))
+                val profile = repository.driverProfile(driverId, currentTeam)
+                _driverProfile.value = UiState.Success(profile)
                 _lastUpdated.value = System.currentTimeMillis()
+                // download photo locally (robust: our own HTTP stack + disk cache)
+                viewModelScope.launch {
+                    _driverPhotoPath.value = repository.downloadDriverPhoto(profile.driver)?.absolutePath
+                }
             } catch (e: Exception) {
                 val msg = when {
                     e is retrofit2.HttpException && e.code() == 429 ->

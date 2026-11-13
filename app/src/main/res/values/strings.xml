@@ -7,7 +7,7 @@
     <string name="tab_races">Grands Prix</string>
     <string name="season_classification">Classement pilotes — saison %1$s</string>
     <string name="season_calendar">Calendrier %1$s</string>
-    <string name="pts">pts</string>
+    <string name="pts"> pts</string>
     <string name="wins">Victoires</string>
     <string name="retry">Réessayer</string>
     <string name="refresh">Actualiser</string>

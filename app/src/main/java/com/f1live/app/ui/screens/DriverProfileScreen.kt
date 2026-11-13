@@ -65,7 +65,8 @@ fun driverAge(dateOfBirth: String?): Int? = try {
 fun DriverProfileScreen(
     state: UiState<DriverProfile>,
     onBack: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    photoPath: String? = null
 ) {
     Scaffold(
         topBar = {
@@ -86,7 +87,7 @@ fun DriverProfileScreen(
             when (state) {
                 is UiState.Loading -> LoadingBox()
                 is UiState.Error -> ErrorBox(state.message, onRefresh)
-                is UiState.Success -> ProfileContent(state.data)
+                is UiState.Success -> ProfileContent(state.data, photoPath)
             }
         }
     }
@@ -94,7 +95,7 @@ fun DriverProfileScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ProfileContent(profile: DriverProfile) {
+private fun ProfileContent(profile: DriverProfile, photoPath: String? = null) {
     val d = profile.driver
     val s = profile.stats
     val age = driverAge(d.dateOfBirth)
@@ -119,12 +120,13 @@ private fun ProfileContent(profile: DriverProfile) {
                         contentAlignment = Alignment.Center
                     ) {
                         val placeholder = androidx.compose.ui.res.painterResource(R.drawable.ic_driver_placeholder)
-                        if (profile.photoUrl != null) {
+                        val photoModel: Any? = photoPath?.let { java.io.File(it) } ?: profile.photoUrl
+                        if (photoModel != null) {
                             coil.compose.AsyncImage(
                                 model = coil.request.ImageRequest.Builder(LocalContext.current)
-                                    .data(profile.photoUrl)
-                                    .memoryCacheKey(profile.photoUrl)
-                                    .diskCacheKey(profile.photoUrl)
+                                    .data(photoModel)
+                                    .memoryCacheKey("photo_${d.driverId}")
+                                    .diskCacheKey("photo_${d.driverId}")
                                     .build(),
                                 contentDescription = stringResource(R.string.driver_photo),
                                 modifier = Modifier
@@ -135,7 +137,7 @@ private fun ProfileContent(profile: DriverProfile) {
                                 fallback = placeholder
                             )
                         }
-                        if (profile.photoUrl == null) {
+                        if (photoModel == null) {
                             Text(
                                 text = d.code ?: d.familyName.take(3).uppercase(),
                                 style = MaterialTheme.typography.titleLarge,

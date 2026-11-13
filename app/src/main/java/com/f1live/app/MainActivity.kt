@@ -65,6 +65,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val racesState by viewModel.races.collectAsStateWithLifecycle()
     val detailState by viewModel.raceDetail.collectAsStateWithLifecycle()
     val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
+    val driverPhotoPath by viewModel.driverPhotoPath.collectAsStateWithLifecycle()
     val liveState by viewModel.liveLaps.collectAsStateWithLifecycle()
     val newsState by viewModel.news.collectAsStateWithLifecycle()
     val lastUpdated by viewModel.lastUpdated.collectAsStateWithLifecycle()
@@ -207,7 +208,8 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                 DriverProfileScreen(
                     state = driverState,
                     onBack = { navController.popBackStack() },
-                    onRefresh = { viewModel.loadDriver(driverId, team) }
+                    onRefresh = { viewModel.loadDriver(driverId, team) },
+                    photoPath = driverPhotoPath
                 )
             }
             composable("races") {

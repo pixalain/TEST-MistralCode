@@ -196,6 +196,37 @@ class F1Repository(
         return null
     }
 
+
+    /**
+     * Downloads the driver's Wikipedia photo to local cache and returns the file.
+     * Returns null if no photo URL or download failed. Cached file is reused.
+     */
+    suspend fun downloadDriverPhoto(driver: com.f1live.app.data.model.Driver): java.io.File? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val url = driverPhotoUrl(driver) ?: return@withContext null
+            val file = cache?.photoFileFor(driver.driverId) ?: return@withContext null
+            if (file.exists() && file.length() > 0L) return@withContext file
+            try {
+                withRetry429 {
+                    ApiClient.plain.newCall(
+                        okhttp3.Request.Builder()
+                            .url(url)
+                            .header("User-Agent", "F1LiveApp/1.0")
+                            .build()
+                    ).execute().use { resp ->
+                        if (!resp.isSuccessful) throw java.io.IOException("HTTP " + resp.code)
+                        resp.body?.byteStream()?.use { input ->
+                            file.outputStream().use { output -> input.copyTo(output) }
+                        } ?: throw java.io.IOException("empty body")
+                    }
+                }
+                file.takeIf { it.exists() && it.length() > 0L }
+            } catch (e: Exception) {
+                file.delete()
+                null
+            }
+        }
+
     private suspend fun <T> withRetry429(maxRetries: Int = 5, block: suspend () -> T): T {
         var attempt = 0
         while (true) {

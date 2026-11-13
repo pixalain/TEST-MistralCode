@@ -159,11 +159,13 @@ private fun DriverRow(d: DriverStanding, onClick: () -> Unit = {}) {
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = d.Driver.code ?: team?.name ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                team?.name?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             if (!d.wins.isNullOrBlank() && d.wins != "0") {
                 Icon(

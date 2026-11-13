@@ -27,6 +27,13 @@ class F1Cache(context: Context) {
 
     fun clear() = prefs.edit { clear() }
 
+    private val appContext = context.applicationContext
+
+    fun photoFileFor(driverId: String): java.io.File =
+        java.io.File(appContext.cacheDir, "photos/$driverId.jpg").apply {
+            parentFile?.mkdirs()
+        }
+
     companion object {
         const val KEY_STANDINGS = "standings"
         const val KEY_CONSTRUCTORS = "constructors"
