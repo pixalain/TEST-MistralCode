@@ -35,10 +35,13 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upcoming
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CircularProgressIndicator
@@ -70,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import com.latraverse.app.data.ArchiveRepository
 import com.latraverse.app.data.Concert
 import com.latraverse.app.data.ConcertRepository
+import com.latraverse.app.data.Favorites
 import com.latraverse.app.data.Concerts
 import com.latraverse.app.data.RemoteSource
 import com.latraverse.app.data.TremplinEdition
@@ -157,6 +161,8 @@ fun LaTraverseMainContent() {
     val scope = rememberCoroutineScope()
     var base by remember { mutableStateOf(Concerts.all) }
     var concerts by remember { mutableStateOf(Concerts.all) }
+    var favorites by remember { mutableStateOf(Favorites.load(context)) }
+    var favoritesOnly by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var refreshing by remember { mutableStateOf(false) }
     var lastUpdate by remember { mutableStateOf<String?>(null) }
@@ -177,13 +183,15 @@ fun LaTraverseMainContent() {
         loadRemote()
     }
 
-    val list = remember(query, tab, concerts) {
+    val list = remember(query, tab, concerts, favorites, favoritesOnly) {
         val base = if (tab == 0) ConcertRepository.upcoming(concerts) else ConcertRepository.past(concerts)
         val q = query.trim().lowercase()
-        if (q.isEmpty()) base else base.filter {
-            it.artist.lowercase().contains(q) ||
-                it.genre.lowercase().contains(q) ||
-                (it.support?.lowercase()?.contains(q) ?: false)
+        base.filter { concert ->
+            (!favoritesOnly || Favorites.key(concert) in favorites) &&
+                (q.isEmpty() ||
+                    concert.artist.lowercase().contains(q) ||
+                    concert.genre.lowercase().contains(q) ||
+                    (concert.support?.lowercase()?.contains(q) ?: false))
         }
     }
 
@@ -263,6 +271,30 @@ fun LaTraverseMainContent() {
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    FilterChip(
+                        selected = favoritesOnly,
+                        onClick = { favoritesOnly = !favoritesOnly },
+                        label = { Text("Favoris seulement") },
+                        leadingIcon = {
+                            Icon(
+                                if (favoritesOnly) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (favoritesOnly) TraverseYellow else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "${favorites.size} favori${if (favorites.size > 1) "s" else ""}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = {
@@ -296,7 +328,13 @@ fun LaTraverseMainContent() {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(list, key = { it.date.toString() + it.artist }) { concert ->
-                            ConcertCard(concert) { selectedConcert = concert }
+                            ConcertCard(
+                                concert,
+                                isFavorite = Favorites.key(concert) in favorites,
+                                onToggleFavorite = {
+                                    favorites = Favorites.toggle(context, favorites, concert)
+                                }
+                            ) { selectedConcert = concert }
                         }
                     }
                 }
@@ -307,7 +345,12 @@ fun LaTraverseMainContent() {
 }
 
 @Composable
-fun ConcertCard(concert: Concert, onClick: () -> Unit) {
+fun ConcertCard(
+    concert: Concert,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,6 +407,13 @@ fun ConcertCard(concert: Concert, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = if (isFavorite) "Retirer des favoris" else "Ajouter aux favoris",
+                    tint = if (isFavorite) TraverseYellow else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
