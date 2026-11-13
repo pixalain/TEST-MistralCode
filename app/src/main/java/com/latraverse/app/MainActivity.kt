@@ -49,12 +49,14 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +73,7 @@ import com.latraverse.app.data.Venue
 import coil.compose.AsyncImage
 import com.latraverse.app.ui.theme.LaTraverseTheme
 import com.latraverse.app.ui.theme.TraverseYellow
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
@@ -146,20 +149,27 @@ fun LaTraverseMainContent() {
     var tab by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var base by remember { mutableStateOf(Concerts.all) }
     var concerts by remember { mutableStateOf(Concerts.all) }
     var loading by remember { mutableStateOf(true) }
+    var refreshing by remember { mutableStateOf(false) }
     var lastUpdate by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        val archive = ArchiveRepository.load(context)
-        val base = ConcertRepository.withArchive(Concerts.all, archive)
-        concerts = base
+    suspend fun loadRemote() {
         val remote = RemoteSource.fetchUpcoming()
         if (remote.isNotEmpty()) {
             concerts = ConcertRepository.merge(base, remote)
             lastUpdate = ConcertRepository.nowLabel()
         }
         loading = false
+        refreshing = false
+    }
+
+    LaunchedEffect(Unit) {
+        base = ConcertRepository.withArchive(Concerts.all, ArchiveRepository.load(context))
+        concerts = base
+        loadRemote()
     }
 
     val list = remember(query, tab, concerts) {
@@ -241,6 +251,14 @@ fun LaTraverseMainContent() {
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
+                PullToRefreshBox(
+                    isRefreshing = refreshing,
+                    onRefresh = {
+                        refreshing = true
+                        scope.launch { loadRemote() }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) {
                 if (list.isEmpty()) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -269,6 +287,7 @@ fun LaTraverseMainContent() {
                             ConcertCard(concert) { selectedConcert = concert }
                         }
                     }
+                }
                 }
             }
         }

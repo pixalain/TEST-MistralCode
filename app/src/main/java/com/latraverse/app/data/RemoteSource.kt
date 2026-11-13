@@ -33,7 +33,21 @@ object RemoteSource {
         "septembre" to 9, "octobre" to 10, "novembre" to 11, "décembre" to 12, "decembre" to 12
     )
 
+    private const val FEED_URL = "https://www.latraverse.org/spip.php?page=backend"
+
+    private val FEED_ITEM = Regex("""<item[\s\S]*?</item>""")
+    private val FEED_TITLE = Regex("""<title>([^<]+)</title>""")
+    private val FEED_LINK = Regex("""<link>([^<]+)</link>""")
+    private val FEED_DATE = Regex("""<dc:date>([^<]+)</dc:date>""")
+    private val FEED_IMAGE = Regex("""src='([^']+)'""")
+
     suspend fun fetchUpcoming(): List<Concert> = withContext(Dispatchers.IO) {
+        val fromHtml = fetchAgendaHtml()
+        if (fromHtml.isNotEmpty()) return@withContext fromHtml
+        fetchFeedUpcoming()
+    }
+
+    private suspend fun fetchAgendaHtml(): List<Concert> = withContext(Dispatchers.IO) {
         runCatching {
             val request = okhttp3.Request.Builder().url(AGENDA_URL).build()
             client.newCall(request).execute().use { response ->
@@ -43,6 +57,40 @@ object RemoteSource {
             }
         }.getOrElse { emptyList() }
     }
+
+    suspend fun fetchFeedUpcoming(): List<Concert> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = okhttp3.Request.Builder().url(FEED_URL).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext emptyList()
+                val xml = response.body?.string() ?: return@withContext emptyList()
+                parseFeed(xml)
+            }
+        }.getOrElse { emptyList() }
+    }
+
+    fun parseFeed(xml: String): List<Concert> =
+        FEED_ITEM.findAll(xml).mapNotNull { item ->
+            val content = item.value
+            val artist = decode(FEED_TITLE.find(content)?.groupValues?.get(1) ?: return@mapNotNull null).trim()
+            if (artist.isEmpty() || artist.equals("La Traverse", ignoreCase = true)) return@mapNotNull null
+            val eventUrl = FEED_LINK.find(content)?.groupValues?.get(1)?.trim()?.ifEmpty { null }
+            val isoDate = FEED_DATE.find(content)?.groupValues?.get(1) ?: return@mapNotNull null
+            val instant = runCatching { java.time.Instant.parse(isoDate) }.getOrNull() ?: return@mapNotNull null
+            val zoned = instant.atZone(java.time.ZoneId.of("Europe/Paris"))
+            val image = FEED_IMAGE.find(content)?.groupValues?.get(1)
+            Concert(
+                artist = artist,
+                date = zoned.toLocalDate(),
+                time = "%02dh%02d".format(zoned.hour, zoned.minute),
+                genre = "Concert",
+                support = null,
+                description = null,
+                imageUrl = image,
+                ticketUrl = null,
+                eventUrl = eventUrl
+            )
+        }.filter { !it.isPast }.sortedBy { it.date }.toList()
 
     fun parseAgenda(html: String): List<Concert> =
         BLOCK.findAll(html).mapNotNull { block ->

@@ -126,4 +126,30 @@ class RemoteSourceTest {
         assertEquals("Photo © Mary Bruton", d.photoCredit)
         assertEquals("pzlK-oZf6PY", d.youtubeId)
     }
+
+    @Test
+    fun `parses rss feed items as fallback source`() {
+        val xml = """
+            <item xml:lang="fr">
+                <title>The Last Internationale</title>
+                <link>https://www.latraverse.org/The-Last-International</link>
+                <guid isPermaLink="true">https://www.latraverse.org/The-Last-International</guid>
+                <dc:date>2027-02-12T19:30:00Z</dc:date>
+                <description>Un vent de rébellion…</description>
+                <content:encoded>&lt;img src='https://www.latraverse.org/local/cache-vignettes/L150xH100/tli.jpg' /&gt;</content:encoded>
+            </item>
+            <item xml:lang="fr">
+                <title>Old Event</title>
+                <dc:date>2024-01-01T20:00:00Z</dc:date>
+            </item>
+        """.trimIndent()
+        val events = RemoteSource.parseFeed(xml)
+        assertEquals(1, events.size)
+        val e = events[0]
+        assertEquals("The Last Internationale", e.artist)
+        assertEquals(LocalDate.of(2027, 2, 12), e.date)
+        assertEquals("20h30", e.time)
+        assertEquals("https://www.latraverse.org/The-Last-International", e.eventUrl)
+        assertTrue(e.imageUrl!!.startsWith("https://www.latraverse.org/local/cache-vignettes/"))
+    }
 }
