@@ -162,7 +162,7 @@ object RemoteSource {
         .replace(Regex("\n{3,}"), "\n\n")
         .trim()
 
-    internal fun parseDate(raw: String): LocalDate? {
+    fun parseDate(raw: String): LocalDate? {
         val m = Regex("(\\d{1,2})\\s+([a-zéûè]+)\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(raw.trim())
             ?: return null
         val day = m.groupValues[1].toInt()

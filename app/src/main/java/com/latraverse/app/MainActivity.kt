@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upcoming
 import androidx.compose.material.icons.filled.Web
@@ -69,6 +70,8 @@ import com.latraverse.app.data.Concert
 import com.latraverse.app.data.ConcertRepository
 import com.latraverse.app.data.Concerts
 import com.latraverse.app.data.RemoteSource
+import com.latraverse.app.data.TremplinEdition
+import com.latraverse.app.data.TremplinRepository
 import com.latraverse.app.data.Venue
 import coil.compose.AsyncImage
 import com.latraverse.app.ui.theme.LaTraverseTheme
@@ -197,12 +200,12 @@ fun LaTraverseMainContent() {
                         titleContentColor = MaterialTheme.colorScheme.onBackground
                     ),
                     actions = {
-                        IconButton(onClick = { tab = if (tab == 2) 0 else 2 }) {
+                        IconButton(onClick = { tab = if (tab == 3) 0 else 3 }) {
                             Icon(Icons.Filled.Info, contentDescription = "Infos salle")
                         }
                     }
                 )
-                if (tab < 2) {
+                if (tab < 3) {
                     TabRow(selectedTabIndex = tab) {
                         Tab(
                             selected = tab == 0,
@@ -216,13 +219,20 @@ fun LaTraverseMainContent() {
                             text = { Text("Passés") },
                             icon = { Icon(Icons.Filled.History, contentDescription = null) }
                         )
+                        Tab(
+                            selected = tab == 2,
+                            onClick = { tab = 2 },
+                            text = { Text("Tremplin") },
+                            icon = { Icon(Icons.Filled.EmojiEvents, contentDescription = null) }
+                        )
                     }
                 }
             }
         }
     ) { padding ->
         when {
-            tab == 2 -> VenueInfoScreen(Modifier.padding(padding))
+            tab == 3 -> VenueInfoScreen(Modifier.padding(padding))
+            tab == 2 -> TremplinScreen(Modifier.padding(padding))
             else -> Column(Modifier.padding(padding).fillMaxSize()) {
                 if (loading) {
                     CircularProgressIndicator(
@@ -474,6 +484,99 @@ fun ActionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
             Icon(icon, contentDescription = null, tint = TraverseYellow)
             Spacer(Modifier.width(12.dp))
             Text(label, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+@Composable
+fun TremplinScreen(modifier: Modifier) {
+    var editions by remember { mutableStateOf(TremplinRepository.bundled) }
+
+    LaunchedEffect(Unit) {
+        val remote = TremplinRepository.fetchEditions()
+        if (remote.isNotEmpty()) editions = remote
+    }
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        items(editions, key = { it.year }) { edition ->
+            TremplinCard(edition)
+        }
+    }
+}
+
+@Composable
+fun TremplinCard(edition: TremplinEdition) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.EmojiEvents,
+                    contentDescription = null,
+                    tint = TraverseYellow,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "${edition.edition}${if (edition.edition == 1) "er" else "e"} Tremplin — ${edition.year}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            if (edition.date != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    edition.date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy"))
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (edition.upcoming) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Prochaine édition — lauréat annoncé après le tremplin",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } else {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Vainqueur : ${edition.winners.joinToString(" / ")}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TraverseYellow
+                )
+                if (edition.participants.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Participants : ${edition.participants.joinToString(", ")}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                if (edition.eventUrl != null) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Voir la page du lauréat",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.clickable {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(edition.eventUrl))
+                            )
+                        }
+                    )
+                }
+            }
         }
     }
 }
