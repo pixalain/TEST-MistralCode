@@ -35,8 +35,11 @@ class InfoConcertRepository {
 
     private fun parseConcerts(doc: Document): List<Concert> {
         val concerts = LinkedHashMap<String, Concert>()
-        val concertLinks = doc.select("a[href]").filter {
-            it.attr("abs:href").contains("$BASE/concert/") && it.attr("href").endsWith(".html")
+        val concertLinks = ArrayList<Element>()
+        for (a in doc.select("a[href]")) {
+            if (a.attr("abs:href").contains("$BASE/concert/") && a.attr("href").endsWith(".html")) {
+                concertLinks.add(a)
+            }
         }
         for (link in concertLinks) {
             val infoUrl = link.attr("abs:href")
