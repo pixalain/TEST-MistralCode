@@ -86,7 +86,11 @@ fun AppScreen(viewModel: ConcertsViewModel) {
         if (department == null) {
             DepartmentPickerScreen(viewModel, Modifier.padding(padding))
         } else {
-            ConcertListScreen(state, Modifier.padding(padding))
+            ConcertListScreen(
+                state = state,
+                onRetry = viewModel::retry,
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 }
@@ -139,7 +143,13 @@ fun DepartmentRow(department: Department, onClick: () -> Unit) {
 }
 
 @Composable
-fun ConcertListScreen(state: com.example.infoconcert.ui.ConcertsUiState, modifier: Modifier) {
+fun ConcertListScreen(
+    state: com.example.infoconcert.ui.ConcertsUiState,
+    onRetry: () -> Unit,
+    modifier: Modifier
+) {
+    val department = state.department
+    val context = LocalContext.current
     when {
         state.isLoading -> {
             Column(
@@ -161,6 +171,17 @@ fun ConcertListScreen(state: com.example.infoconcert.ui.ConcertsUiState, modifie
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onRetry) {
+                        Text("Réessayer")
+                    }
+                    department?.let {
+                        Button(onClick = { openUrl(context, it.url) }) {
+                            Text("Ouvrir le site")
+                        }
+                    }
+                }
             }
         }
         state.concerts.isEmpty() -> {
@@ -172,6 +193,12 @@ fun ConcertListScreen(state: com.example.infoconcert.ui.ConcertsUiState, modifie
                 verticalArrangement = Arrangement.Center
             ) {
                 Text("Aucun concert trouvé pour ce département.")
+                Spacer(Modifier.height(16.dp))
+                department?.let {
+                    Button(onClick = { openUrl(context, it.url) }) {
+                        Text("Ouvrir le site")
+                    }
+                }
             }
         }
         else -> {

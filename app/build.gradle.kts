@@ -50,6 +50,5 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("org.jsoup:jsoup:1.17.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }

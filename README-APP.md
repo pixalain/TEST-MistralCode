@@ -12,8 +12,10 @@ Application Android qui liste les concerts par département à partir des pages 
 
 ## Stack
 
-- Kotlin, Jetpack Compose (Material 3), ViewModel + StateFlow
-- Jsoup pour récupérer et analyser les pages HTML d'infoconcert.com
+- Kotlin, Jetpack Compose (Material 3), ViewModel + StateFlow (AndroidViewModel)
+- Récupération des données via un WebView invisible (moteur Chrome) qui charge la page
+  département d'infoconcert et exécute un script d'extraction (`app/src/main/assets/extract.js`),
+  renvoyant les concerts en JSON à l'app
 
 ## Build
 
@@ -25,9 +27,9 @@ APK généré dans `app/build/outputs/apk/debug/`.
 
 ## Limitations
 
-- Infoconcert ne fournit pas d'API publique : l'app parse le HTML, qui peut changer à tout moment.
-  Le parser (`InfoConcertRepository`) est volontairement heuristique (motifs de date, liens
-  `/concert/`, libellé « Réserver »).
-- Le site protège ses pages contre les robots ; en cas d'échec répété depuis un appareil,
-  vérifier que la page s'ouvre bien dans le navigateur du téléphone.
+- Infoconcert ne fournit pas d'API publique : l'app extrait les données du HTML chargé dans un
+  WebView, qui peut changer à tout moment. Le script d'extraction est volontairement
+  heuristique (motifs de date, liens `/concert/`, libellé « Réserver »).
+- Le WebView passe la protection anti-bot du site car c'est un vrai moteur de navigateur ;
+  le premier chargement peut prendre quelques secondes (timeout de 45 s).
 - Seule la première page de résultats est chargée (pas de pagination gérée).
