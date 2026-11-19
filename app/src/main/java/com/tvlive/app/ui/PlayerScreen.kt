@@ -43,7 +43,7 @@ import com.tvlive.app.player.DirectDownloads
 import com.tvlive.app.player.TvDownloads
 import com.tvlive.app.player.TvPlayer
 
-@OptIn(UnstableApi::class, ExperimentalMaterial3Api::class)
+@OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(nav: NavController, url: String, name: String) {
     val context = LocalContext.current
@@ -58,19 +58,22 @@ fun PlayerScreen(nav: NavController, url: String, name: String) {
         player.prepare()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(name) },
-                navigationIcon = {
-                    IconButton(onClick = { nav.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null)
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Scaffold { padding ->
         Column(modifier = Modifier.padding(padding)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = { nav.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = null)
+                }
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
             AndroidView(
                 factory = { ctx ->
                     PlayerView(ctx).apply {
