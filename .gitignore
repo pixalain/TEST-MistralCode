@@ -11,3 +11,5 @@ captures/
 *.keystore
 *.jks
 f1-signing.properties
+__pycache__/
+*.py[cod]
