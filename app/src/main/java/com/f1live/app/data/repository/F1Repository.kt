@@ -432,7 +432,7 @@ class F1Repository(
                     entries = parseAlphaResults(r)
                 } catch (e: Exception) { }
             }
-            out.add(WeekendSession(sc.code, sc.title, sc.timestamp, held, entries))
+            out.add(WeekendSession(sc.code, sc.title, sc.timestamp, sc.localTimestamp, held, entries))
         }
         val result = RaceWeekend(season, roundNumber, ev.raceName, out)
         cache?.save(cacheKey, F1Json.json.encodeToString(RaceWeekend.serializer(), result))
@@ -798,6 +798,7 @@ data class AlphaScheduleItem(
     val code: String,
     val title: String,
     val timestamp: String?,
+    val localTimestamp: String?,
     val resultsUrl: String?
 )
 
@@ -819,6 +820,7 @@ fun parseScheduleEvent(json: kotlinx.serialization.json.JsonObject, roundNumber:
             code = code,
             title = o["title"]?.jsonPrimitive?.content ?: code,
             timestamp = o["timestamp"]?.jsonPrimitive?.content,
+            localTimestamp = o["local_timestamp"]?.jsonPrimitive?.content,
             resultsUrl = o["results_url"]?.jsonPrimitive?.content
         )
     } ?: emptyList()

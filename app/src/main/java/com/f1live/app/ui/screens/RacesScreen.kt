@@ -186,13 +186,14 @@ private fun RaceCard(
                             Spacer(Modifier.height(8.dp))
                             weekend.data.sessions.forEach { sess ->
                                 val status = if (sess.held) stringResource(R.string.session_held) else stringResource(R.string.upcoming)
+                                val time = sess.localTimestamp?.let { formatLocalSessionTimeShort(it) } ?: ""
                                 val top = if (sess.entries.isNotEmpty()) {
                                     " — " + sess.entries.take(3).joinToString(" · ") { e ->
                                         "P${e.position} ${e.driverCode}" + (e.time?.let { " $it" } ?: "")
                                     }
                                 } else ""
                                 Text(
-                                    text = "${sess.title} ($status)$top",
+                                    text = "${sess.title} · $time ($status)$top",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = if (sess.held) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -212,4 +213,11 @@ private fun RaceCard(
             }
         }
     }
+}
+
+private fun formatLocalSessionTimeShort(localTs: String): String = try {
+    val odt = java.time.OffsetDateTime.parse(localTs.replace(" ", "T"))
+    odt.format(java.time.format.DateTimeFormatter.ofPattern("d MMM HH:mm", java.util.Locale.getDefault()))
+} catch (e: Exception) {
+    localTs
 }

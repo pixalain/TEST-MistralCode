@@ -15,6 +15,7 @@ data class WeekendSession(
     val code: String,          // FP1, FP2, FP3, Q, SR, R
     val title: String,         // "Practice 1"
     val timestamp: String?,    // UTC ISO
+    val localTimestamp: String? = null,
     val held: Boolean,         // session already took place
     val entries: List<AlphaSessionEntry> = emptyList() // top results if available
 )

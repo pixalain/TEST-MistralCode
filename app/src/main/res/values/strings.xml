@@ -91,4 +91,6 @@
     <string name="team_logo">Logo de l\'écurie</string>
     <string name="loading_sessions">Chargement des séances…</string>
     <string name="session_held">effectuée</string>
+    <string name="weekend_program">Programme</string>
+    <string name="no_session_data">Aucune donnée de séance pour ce GP</string>
 </resources>
