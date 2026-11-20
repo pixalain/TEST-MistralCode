@@ -166,6 +166,12 @@ interface AlphaService {
     @GET("f1/alpha/laps/{roundId}/R/")
     suspend fun raceLaps(@Path("roundId") roundId: String): AlphaEnvelope<AlphaLapsData>
 
+    @GET("f1/alpha/laps/{roundId}/{code}/")
+    suspend fun sessionLaps(
+        @Path("roundId") roundId: String,
+        @Path("code") code: String
+    ): AlphaEnvelope<AlphaLapsData>
+
     @GET
     suspend fun raw(@Url url: String): JsonObject
 }

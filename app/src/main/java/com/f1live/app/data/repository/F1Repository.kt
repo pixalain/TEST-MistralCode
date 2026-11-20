@@ -480,11 +480,39 @@ class F1Repository(
         val envelope: AlphaEnvelope<com.f1live.app.data.model.AlphaSessionResults> =
             withRetry429 { alpha.sessionResults(roundId, code) }
         val body = envelope.data ?: return null
+        var rows = body.results
+        if (rows.isEmpty()) {
+            // fallback: rebuild classification from lap times (best lap per driver)
+            rows = try {
+                val lapsEnv = withRetry429 { alpha.sessionLaps(roundId, code) }
+                val ld = lapsEnv.data
+                if (ld == null) emptyList() else {
+                    val best = mutableMapOf<String, com.f1live.app.data.model.AlphaLap>()
+                    for (l in ld.laps) {
+                        val did = l.driver_id ?: continue
+                        val ms = l.time_milliseconds ?: continue
+                        val cur = best[did]
+                        if (cur == null || ms < (cur.time_milliseconds ?: Long.MAX_VALUE)) best[did] = l
+                    }
+                    best.values.sortedBy { it.time_milliseconds ?: Long.MAX_VALUE }.mapIndexed { i, l ->
+                        val d = ld.drivers_by_id[l.driver_id]
+                        com.f1live.app.data.model.AlphaResultRow(
+                            driver = d ?: com.f1live.app.data.model.AlphaDriver(abbreviation = l.driver_id),
+                            team = l.team_id?.let { ld.teams_by_id[it] },
+                            position = i + 1,
+                            time = l.time_display
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
         SessionResults(
             code = code,
             title = body.title ?: title,
             timestamp = body.local_timestamp ?: body.timestamp,
-            rows = body.results
+            rows = rows
         )
     } catch (e: Exception) {
         null
@@ -502,8 +530,17 @@ class F1Repository(
             return@coroutineScope Cached(detail, fromCache = true, cachedAt = cached.second)
         }
         val data = F1Json.races(raw)
-        val race = data.raceTable.Races.firstOrNull()
-            ?: throw IllegalStateException("Grand Prix introuvable (round $round)")
+        var race = data.raceTable.Races.firstOrNull()
+        if (race == null) {
+            // no race results yet (upcoming GP): fall back to the season schedule
+            val sched = try {
+                withRetry429 {
+                    if (season == "current") service.seasonSchedule() else service.seasonScheduleFor(season)
+                }
+            } catch (e: Exception) { null }
+            race = sched?.let { F1Json.races(it).raceTable.Races.firstOrNull { r -> r.round == round } }
+                ?: throw IllegalStateException("Grand Prix introuvable (round $round)")
+        }
         val results = race.Results.orEmpty()
 
         val sprintDeferred = async {

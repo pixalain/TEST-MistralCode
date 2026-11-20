@@ -285,10 +285,9 @@ private fun DetailContent(
     val liveTab = if (hasRace && seasonOk) DetailTab(R.string.live_tab, "LIVE") else null
     val weekendTab = DetailTab(R.string.weekend_program, "WEEKEND")
     val tabs = if (detail.alphaSessions.isNotEmpty()) {
-        listOf(weekendTab) +
-            (if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered) +
-            listOfNotNull(liveTab)
-    } else listOf(weekendTab) + legacyTabs + listOfNotNull(liveTab)
+        (if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered) +
+            listOfNotNull(liveTab) + weekendTab
+    } else legacyTabs + listOfNotNull(liveTab) + weekendTab
 
     val initialIndex = remember(tabs.size, initialTab) {
         if (initialTab.isBlank()) 0

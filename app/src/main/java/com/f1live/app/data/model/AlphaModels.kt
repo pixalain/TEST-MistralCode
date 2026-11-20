@@ -116,7 +116,9 @@ data class AlphaLapsData(
 data class AlphaLap(
     val number: Int = 0,
     val position: Int = 0,
+    val time: String? = null,
     val time_display: String? = null,
+    val time_milliseconds: Long? = null,
     val is_entry_fastest_lap: Boolean = false,
     val driver_id: String? = null,
     val team_id: String? = null

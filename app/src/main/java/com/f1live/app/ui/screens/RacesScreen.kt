@@ -179,38 +179,6 @@ private fun RaceCard(
                     )
                 }
             }
-            if (!done && !hasResults && weekend != null) {
-                when (weekend) {
-                    is UiState.Success -> {
-                        if (weekend.data.sessions.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            weekend.data.sessions.forEach { sess ->
-                                val status = if (sess.held) stringResource(R.string.session_held) else stringResource(R.string.upcoming)
-                                val time = sess.localTimestamp?.let { formatLocalSessionTimeShort(it) } ?: ""
-                                val top = if (sess.entries.isNotEmpty()) {
-                                    " — " + sess.entries.take(3).joinToString(" · ") { e ->
-                                        "P${e.position} ${e.driverCode}" + (e.time?.let { " $it" } ?: "")
-                                    }
-                                } else ""
-                                Text(
-                                    text = "${sess.title} · $time ($status)$top",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (sess.held) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                    is UiState.Loading -> {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(R.string.loading_sessions),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    else -> {}
-                }
-            }
         }
     }
 }
