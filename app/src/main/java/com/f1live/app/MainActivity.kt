@@ -71,6 +71,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val driverState by viewModel.driverProfile.collectAsStateWithLifecycle()
     val driverPhotoPath by viewModel.driverPhotoPath.collectAsStateWithLifecycle()
     val constructorState by viewModel.constructorProfile.collectAsStateWithLifecycle()
+    val weekendState by viewModel.weekend.collectAsStateWithLifecycle()
     val compareState by viewModel.compare.collectAsStateWithLifecycle()
     var compareA by remember { mutableStateOf("") }
     var compareB by remember { mutableStateOf("") }
@@ -268,6 +269,8 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                         val season = (racesState as? com.f1live.app.ui.UiState.Success)?.data?.season ?: "current"
                         navController.navigate("race/${race.round}/?season=$season")
                     },
+                    weekend = weekendState,
+                    onLoadWeekend = { round -> viewModel.loadWeekend(round) },
                     lastUpdated = lastUpdated
                 )
             }

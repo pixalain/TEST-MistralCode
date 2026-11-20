@@ -401,6 +401,44 @@ class F1Repository(
             }
         }
 
+
+    /**
+     * Weekend program (FP1/FP2/FP3/Q/Sprint/Race) for the given round via the Jolpica
+     * alpha schedules API, with per-session status (held or upcoming) and top results
+     * when published.
+     */
+    suspend fun raceWeekendSessions(season: String, roundNumber: Int): RaceWeekend {
+        val cacheKey = "weekend_${season}_$roundNumber"
+        cache?.load(cacheKey)?.let { (raw, _) ->
+            if (raw.isNotBlank()) {
+                return runCatching {
+                    F1Json.json.decodeFromString(RaceWeekend.serializer(), raw)
+                }.getOrNull() ?: RaceWeekend(season, roundNumber, "", emptyList())
+            }
+        }
+        val schedRaw = withRetry429 {
+            alpha.raw("https://api.jolpi.ca/f1/alpha/schedules/$season/")
+        }
+        val ev = parseScheduleEvent(schedRaw, roundNumber)
+            ?: return RaceWeekend(season, roundNumber, "", emptyList())
+        val now = java.time.Instant.now()
+        val out = mutableListOf<WeekendSession>()
+        for (sc in ev.schedule) {
+            val held = sc.timestamp == null || runCatching { java.time.Instant.parse(sc.timestamp) <= now }.getOrDefault(false)
+            var entries = emptyList<AlphaSessionEntry>()
+            if (held && !sc.resultsUrl.isNullOrBlank()) {
+                try {
+                    val r = withRetry429 { alpha.raw(sc.resultsUrl) }
+                    entries = parseAlphaResults(r)
+                } catch (e: Exception) { }
+            }
+            out.add(WeekendSession(sc.code, sc.title, sc.timestamp, held, entries))
+        }
+        val result = RaceWeekend(season, roundNumber, ev.raceName, out)
+        cache?.save(cacheKey, F1Json.json.encodeToString(RaceWeekend.serializer(), result))
+        return result
+    }
+
     private suspend fun <T> withRetry429(maxRetries: Int = 5, block: suspend () -> T): T {
         var attempt = 0
         while (true) {
@@ -753,4 +791,57 @@ fun parseWikidataDeathDate(json: kotlinx.serialization.json.JsonObject): String?
         ?.get("time")?.jsonPrimitive?.content ?: return null
     // "+1994-05-01T00:00:00Z" -> "1994-05-01"
     return Regex("^(\\+?\\d{4,})-(\\d{2})-(\\d{2})").find(time)?.let { "${it.groupValues[1].removePrefix("+")}-${it.groupValues[2]}-${it.groupValues[3]}" }
+}
+
+// Pure parsers for Jolpica alpha API (unit-testable)
+data class AlphaScheduleItem(
+    val code: String,
+    val title: String,
+    val timestamp: String?,
+    val resultsUrl: String?
+)
+
+data class AlphaScheduleEvent(
+    val roundId: String,
+    val raceName: String,
+    val schedule: List<AlphaScheduleItem>
+)
+
+fun parseScheduleEvent(json: kotlinx.serialization.json.JsonObject, roundNumber: Int): AlphaScheduleEvent? {
+    val events = json["data"]?.jsonObject?.get("events")?.jsonArray ?: return null
+    val ev = events.firstOrNull { it.jsonObject["round"]?.jsonObject?.get("number")?.jsonPrimitive?.content?.toIntOrNull() == roundNumber }?.jsonObject
+        ?: return null
+    val round = ev["round"]!!.jsonObject
+    val schedule = ev["schedule"]?.jsonArray?.mapNotNull { item ->
+        val o = item.jsonObject
+        val code = o["code"]?.jsonPrimitive?.content ?: return@mapNotNull null
+        AlphaScheduleItem(
+            code = code,
+            title = o["title"]?.jsonPrimitive?.content ?: code,
+            timestamp = o["timestamp"]?.jsonPrimitive?.content,
+            resultsUrl = o["results_url"]?.jsonPrimitive?.content
+        )
+    } ?: emptyList()
+    return AlphaScheduleEvent(
+        roundId = round["id"]?.jsonPrimitive?.content ?: "",
+        raceName = round["name"]?.jsonPrimitive?.content ?: "",
+        schedule = schedule
+    )
+}
+
+fun parseAlphaResults(json: kotlinx.serialization.json.JsonObject): List<AlphaSessionEntry> {
+    val results = json["data"]?.jsonObject?.get("results")?.jsonArray ?: return emptyList()
+    return results.mapNotNull { e ->
+        val o = e.jsonObject
+        val d = o["driver"]?.jsonObject ?: return@mapNotNull null
+        AlphaSessionEntry(
+            position = o["position"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+            driverCode = d["abbreviation"]?.jsonPrimitive?.content ?: "",
+            driverName = listOfNotNull(
+                d["given_name"]?.jsonPrimitive?.content,
+                d["family_name"]?.jsonPrimitive?.content
+            ).joinToString(" "),
+            time = o["time_display"]?.jsonPrimitive?.content ?: o["fastest_lap"]?.jsonPrimitive?.content
+        )
+    }.sortedBy { it.position }
 }

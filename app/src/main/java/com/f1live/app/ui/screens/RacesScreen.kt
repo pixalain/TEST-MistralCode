@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,6 +54,8 @@ fun RacesScreen(
     state: UiState<RacesUi>,
     onRefresh: () -> Unit,
     onRaceClick: (Race) -> Unit,
+    weekend: UiState<com.f1live.app.data.repository.RaceWeekend> = UiState.Loading,
+    onLoadWeekend: (Int) -> Unit = {},
     lastUpdated: Long? = null
 ) {
     when (state) {
@@ -60,6 +63,12 @@ fun RacesScreen(
         is UiState.Error -> ErrorBox(state.message, onRefresh)
         is UiState.Success -> {
             val today = LocalDate.now()
+            val nextRace = state.data.races
+                .filter { r -> runCatching { LocalDate.parse(r.date) }.getOrNull()?.let { !it.isBefore(today) } == true }
+                .minByOrNull { it.round.toIntOrNull() ?: 999 }
+            androidx.compose.runtime.LaunchedEffect(nextRace?.round) {
+                nextRace?.round?.toIntOrNull()?.let { onLoadWeekend(it) }
+            }
             LazyColumn(
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -76,7 +85,13 @@ fun RacesScreen(
                 items(state.data.races, key = { it.round }) { race ->
                     val raceDate = runCatching { LocalDate.parse(race.date) }.getOrNull()
                     val done = raceDate != null && raceDate.isBefore(today)
-                    RaceCard(race = race, done = done, onClick = { onRaceClick(race) })
+                    val isNext = nextRace != null && race.round == nextRace.round
+                    RaceCard(
+                        race = race,
+                        done = done,
+                        onClick = { onRaceClick(race) },
+                        weekend = if (isNext) weekend else null
+                    )
                 }
             }
         }
@@ -84,7 +99,12 @@ fun RacesScreen(
 }
 
 @Composable
-private fun RaceCard(race: Race, done: Boolean, onClick: () -> Unit) {
+private fun RaceCard(
+    race: Race,
+    done: Boolean,
+    onClick: () -> Unit,
+    weekend: UiState<com.f1live.app.data.repository.RaceWeekend>? = null
+) {
     val hasResults = !race.Results.isNullOrEmpty()
     Card(
         modifier = Modifier
@@ -157,6 +177,37 @@ private fun RaceCard(race: Race, done: Boolean, onClick: () -> Unit) {
                         style = MaterialTheme.typography.labelMedium,
                         color = statusColor
                     )
+                }
+            }
+            if (!done && !hasResults && weekend != null) {
+                when (weekend) {
+                    is UiState.Success -> {
+                        if (weekend.data.sessions.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            weekend.data.sessions.forEach { sess ->
+                                val status = if (sess.held) stringResource(R.string.session_held) else stringResource(R.string.upcoming)
+                                val top = if (sess.entries.isNotEmpty()) {
+                                    " — " + sess.entries.take(3).joinToString(" · ") { e ->
+                                        "P${e.position} ${e.driverCode}" + (e.time?.let { " $it" } ?: "")
+                                    }
+                                } else ""
+                                Text(
+                                    text = "${sess.title} ($status)$top",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (sess.held) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    is UiState.Loading -> {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.loading_sessions),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    else -> {}
                 }
             }
         }

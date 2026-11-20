@@ -89,4 +89,6 @@
     <string name="compare_pick_b">Écurie 2</string>
     <string name="compare_chart_title">Points par manche — %1$s</string>
     <string name="team_logo">Logo de l\'écurie</string>
+    <string name="loading_sessions">Chargement des séances…</string>
+    <string name="session_held">effectuée</string>
 </resources>

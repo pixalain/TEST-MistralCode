@@ -165,6 +165,9 @@ interface AlphaService {
 
     @GET("f1/alpha/laps/{roundId}/R/")
     suspend fun raceLaps(@Path("roundId") roundId: String): AlphaEnvelope<AlphaLapsData>
+
+    @GET
+    suspend fun raw(@Url url: String): JsonObject
 }
 
 interface WikipediaService {
