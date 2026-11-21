@@ -94,69 +94,6 @@ fun RaceDetailScreen(
 }
 
 @Composable
-private fun WeekendProgramList(weekend: UiState<com.f1live.app.data.repository.RaceWeekend>) {
-    when (weekend) {
-        is UiState.Loading -> LoadingBox()
-        is UiState.Error -> ErrorBox(weekend.message, {})
-        is UiState.Success -> {
-            if (weekend.data.sessions.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.no_session_data), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                return
-            }
-            LazyColumn(
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(weekend.data.sessions, key = { it.code }) { sess ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = sess.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    text = if (sess.held) stringResource(R.string.session_held) else stringResource(R.string.upcoming),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (sess.held) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            sess.localTimestamp?.let {
-                                Text(
-                                    text = formatLocalSessionTime(it),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            if (sess.entries.isNotEmpty()) {
-                                Spacer(Modifier.height(6.dp))
-                                sess.entries.take(5).forEach { e ->
-                                    Text(
-                                        text = "P${e.position}  ${e.driverName}" + (e.time?.let { " — $it" } ?: ""),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun formatLocalSessionTime(localTs: String): String = try {
-    val odt = java.time.OffsetDateTime.parse(localTs.replace(" ", "T"))
-    odt.format(java.time.format.DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", java.util.Locale.getDefault()))
-} catch (e: Exception) {
-    localTs
-}
-
-@Composable
 private fun LiveTab(round: String, onRefreshLive: () -> Unit) {
     androidx.compose.runtime.LaunchedEffect(round) { onRefreshLive() }
     androidx.compose.runtime.LaunchedEffect(round) {
@@ -252,6 +189,7 @@ private fun DetailContent(
     }
     val hasSprint = detail.race.Sprint != null || detail.sprint.isNotEmpty()
     val alphaTabs = detail.alphaSessions
+        .filter { s -> s.rows.isNotEmpty() || s.code == "R" } // hide empty session tabs
         .filter { s -> hasSprint || (s.code != "SQ" && s.code != "SR") }
         .map { s ->
             DetailTab(
@@ -283,11 +221,10 @@ private fun DetailContent(
     val hasRace = detail.alphaSessions.any { it.code == "R" && it.rows.isNotEmpty() } || detail.results.isNotEmpty()
     val seasonOk = (detail.race.season.toIntOrNull() ?: 2026) >= 2018 // alpha live data starts 2018
     val liveTab = if (hasRace && seasonOk) DetailTab(R.string.live_tab, "LIVE") else null
-    val weekendTab = DetailTab(R.string.weekend_program, "WEEKEND")
     val tabs = if (detail.alphaSessions.isNotEmpty()) {
         (if (gridEntries.isNotEmpty()) alphaOrdered + DetailTab(R.string.starting_grid_tab, "GRID") else alphaOrdered) +
-            listOfNotNull(liveTab) + weekendTab
-    } else legacyTabs + listOfNotNull(liveTab) + weekendTab
+            listOfNotNull(liveTab)
+    } else legacyTabs + listOfNotNull(liveTab)
 
     val initialIndex = remember(tabs.size, initialTab) {
         if (initialTab.isBlank()) 0
@@ -312,7 +249,6 @@ private fun DetailContent(
             }
         }
         when (current.code) {
-            "WEEKEND" -> WeekendProgramList(weekend)
             null -> ResultsList(detail.race, detail.results)
             "SPRINT_LEGACY" -> ResultsList(detail.race, detail.sprint)
             "QUALI_LEGACY" -> LegacyQualifyingList(detail.race, detail.qualifying)

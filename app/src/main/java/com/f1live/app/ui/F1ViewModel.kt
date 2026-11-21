@@ -78,7 +78,7 @@ class F1ViewModel(
         _weekend.value = UiState.Loading
         viewModelScope.launch {
             try {
-                _weekend.value = UiState.Success(repository.raceWeekendSessions(_season.value, round))
+                _weekend.value = UiState.Success(repository.raceWeekendSessions(_season.value, round, force = true))
             } catch (e: Exception) {
                 _weekend.value = UiState.Error(e.message ?: "Erreur week-end")
             }
@@ -202,7 +202,7 @@ class F1ViewModel(
         _races.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.seasonSchedule(_season.value)
+                val result = repository.seasonSchedule(_season.value, force = true)
                 if (_season.value == "current" && result.data.first.isNotBlank()) {
                     _season.value = result.data.first
                 }
@@ -250,11 +250,11 @@ class F1ViewModel(
         }
     }
 
-    fun loadRace(round: String, season: String = _season.value) {
+    fun loadRace(round: String, season: String = _season.value, force: Boolean = false) {
         _raceDetail.value = UiState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.raceResults(round, season)
+                val result = repository.raceResults(round, season, force = force)
                 _raceDetail.value = UiState.Success(result.data, fromCache = result.fromCache)
                 _lastUpdated.value = if (result.fromCache) result.cachedAt else System.currentTimeMillis()
             } catch (e: Exception) {

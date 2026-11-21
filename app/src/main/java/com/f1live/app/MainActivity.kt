@@ -301,7 +301,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     weekend = weekendState,
                     onLoadWeekend = { r -> viewModel.loadWeekend(r) },
                     onBack = { navController.popBackStack() },
-                    onRefresh = { viewModel.loadRace(round, season) },
+                    onRefresh = { viewModel.loadRace(round, season, force = true) },
                     onRefreshLive = { viewModel.loadLiveLaps(round, detailState.let { (it as? com.f1live.app.ui.UiState.Success)?.data?.race?.season ?: season }) }
                 )
             }

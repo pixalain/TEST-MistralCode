@@ -139,7 +139,7 @@ class F1Repository(
         return Cached(table.season to (table.StandingsLists.firstOrNull()?.ConstructorStandings.orEmpty()), fromCache = false)
     }
 
-    suspend fun seasonSchedule(season: String = "current"): Cached<Pair<String, List<Race>>> {
+    suspend fun seasonSchedule(season: String = "current", force: Boolean = false): Cached<Pair<String, List<Race>>> {
         val key = F1Cache.KEY_SCHEDULE + "_" + season
         val raw = try {
             withRetry429 {
@@ -407,9 +407,9 @@ class F1Repository(
      * alpha schedules API, with per-session status (held or upcoming) and top results
      * when published.
      */
-    suspend fun raceWeekendSessions(season: String, roundNumber: Int): RaceWeekend {
+    suspend fun raceWeekendSessions(season: String, roundNumber: Int, force: Boolean = false): RaceWeekend {
         val cacheKey = "weekend_${season}_$roundNumber"
-        cache?.load(cacheKey)?.let { (raw, _) ->
+        if (!force) cache?.load(cacheKey)?.let { (raw, _) ->
             if (raw.isNotBlank()) {
                 return runCatching {
                     F1Json.json.decodeFromString(RaceWeekend.serializer(), raw)
@@ -518,8 +518,12 @@ class F1Repository(
         null
     }
 
-    suspend fun raceResults(round: String, season: String = "current"): Cached<RaceDetail> = coroutineScope {
+    suspend fun raceResults(round: String, season: String = "current", force: Boolean = false): Cached<RaceDetail> = coroutineScope {
         val key = F1Cache.raceKey(season, round)
+        if (!force) cache?.load(key)?.let { (raw, at) ->
+            val detail = F1Json.json.decodeFromString(kotlinx.serialization.serializer<RaceDetail>(), raw)
+            return@coroutineScope Cached(detail, fromCache = true, cachedAt = at)
+        }
         val raw = try {
             withRetry429 {
                 if (season == "current") service.raceResults(round) else service.seasonRaceResults(season, round)
