@@ -57,3 +57,6 @@ app/src/test/java/com/tvlive/app/M3uParserTest.kt   tests unitaires JUnit
 ```bash
 ./gradlew testDebugUnitTest   # exécuté aussi par la CI
 ```
+
+# APK précompilé (téléchargement direct, sans zip)
+releases/
