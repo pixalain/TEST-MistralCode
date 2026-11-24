@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Live &amp; Replay</string>
+    <string name="tab_channels">Chaînes</string>
+    <string name="tab_downloads">Téléchargements</string>
+    <string name="search_hint">Rechercher une chaîne…</string>
+    <string name="add_playlist_url">Ajouter une playlist (URL)</string>
+    <string name="open_playlist_file">Ouvrir une playlist (.m3u)</string>
+    <string name="playlist_url_dialog_title">Playlist M3U par URL</string>
+    <string name="playlist_url_hint">https://…/playlist.m3u8</string>
+    <string name="add">Ajouter</string>
+    <string name="cancel">Annuler</string>
+    <string name="download">Télécharger</string>
+    <string name="open_external">Lecteur externe</string>
+    <string name="play">Lire</string>
+    <string name="remove">Supprimer</string>
+    <string name="open_file">Ouvrir le fichier</string>
+    <string name="delete">Effacer</string>
+    <string name="download_channel_name">Téléchargements</string>
+    <string name="download_channel_description">Téléchargement des replays en arrière-plan</string>
+    <string name="added_hls">Replay ajouté : lecture hors ligne dans l’onglet Téléchargements.</string>
+    <string name="added_file">Téléchargement du fichier lancé.</string>
+    <string name="no_external_player">Aucun lecteur externe trouvé.</string>
+    <string name="channels_total">%1$d chaînes au total</string>
+    <string name="load_error">Erreur : %1$s</string>
+    <string name="hls_section">Replays HLS (hors ligne, cache de l’app)</string>
+    <string name="files_section">Fichiers téléchargés</string>
+    <string name="empty_downloads">Aucun téléchargement pour le moment.</string>
+    <string name="empty_channels">Aucune chaîne. Ajoutez une playlist via les icônes en haut.</string>
+    <string name="legal_note">Flux accessibles en clair uniquement : aucun DRM, géo-blocage ou paywall n’est contourné.</string>
+</resources>

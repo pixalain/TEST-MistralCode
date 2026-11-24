@@ -1,0 +1,43 @@
+package com.tvlive.app.ui.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+private val TvBlue = Color(0xFF5FB4FF)
+
+private val DarkColors = darkColorScheme(
+    primary = TvBlue,
+    onPrimary = Color(0xFF00263F),
+    primaryContainer = Color(0xFF0B3A5C),
+    onPrimaryContainer = Color.White,
+    background = Color(0xFF0E1622),
+    onBackground = Color(0xFFE8EAEE),
+    surface = Color(0xFF16202E),
+    onSurface = Color(0xFFE8EAEE),
+    surfaceVariant = Color(0xFF232F40),
+    onSurfaceVariant = Color(0xFFB8BFC9),
+)
+
+private val LightColors = lightColorScheme(
+    primary = Color(0xFF0B5FA5),
+    onPrimary = Color.White,
+    background = Color(0xFFFAFBFC),
+    onBackground = Color(0xFF14181F),
+    surface = Color.White,
+    onSurface = Color(0xFF14181F),
+)
+
+@Composable
+fun TvLiveTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    MaterialTheme(
+        colorScheme = if (darkTheme) DarkColors else LightColors,
+        content = content,
+    )
+}

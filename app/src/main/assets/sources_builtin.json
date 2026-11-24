@@ -1,0 +1,21 @@
+{
+  "commentaire": "Catalogue intégré : uniquement des flux TV en clair, publiquement accessibles (pas de DRM). Certaines chaînes appliquent un géo-blocage : le flux peut alors échouer selon le pays de l'utilisateur. Les playlists distantes sont des playlists IPTV publiques ; ajoutez les vôtres via le menu Fichier.",
+  "streams": [
+    {"name": "Arte (FR)", "url": "https://artesimulcast.akamaized.net/hls/live/2031003/artelive_fr/index.m3u8", "group": "Service public"},
+    {"name": "Arte (DE)", "url": "https://artesimulcast.akamaized.net/hls/live/2030993/artelive_de/index.m3u8", "group": "Service public"},
+    {"name": "TV5 Monde Info", "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8", "group": "Service public"},
+    {"name": "TV5 Monde FBS", "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(fbs)/index.m3u8", "group": "Service public"},
+    {"name": "TV5 Monde Europe", "url": "https://ott.tv5monde.com/Content/HLS/Live/channel(europe)/index.m3u8", "group": "Service public"},
+    {"name": "France 24 (ES)", "url": "https://live.france24.com/hls/live/2037220-b/F24_ES_HI_HLS/master_5000.m3u8", "group": "Infos"},
+    {"name": "BFM TV", "url": "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_TV/index.m3u8?end=END&start=LIVE", "group": "Infos"},
+    {"name": "CGTN Français", "url": "https://news.cgtn.com/resource/live/french/cgtn-f.m3u8", "group": "Infos"},
+    {"name": "Al Jazeera English", "url": "https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8", "group": "Infos"},
+    {"name": "NHK World Japan", "url": "https://media-osa.hls.nhkworld.jp/hls/w/live/master.m3u8", "group": "Infos"},
+    {"name": "Das Erste (ARD)", "url": "https://daserste-live.ard-mcdn.de/daserste/live/hls/de/master.m3u8", "group": "Service public"},
+    {"name": "ZDF", "url": "https://zdf-hls-15.akamaized.net/hls/live/2016498/de/veryhigh/master.m3u8", "group": "Service public"},
+    {"name": "RTÉ One", "url": "https://live.rte.ie/live/a/channel1/channel1.isml/channel1.m3u8", "group": "Service public"}
+  ],
+  "playlists": [
+    {"name": "Playlist publique Free-TV/IPTV (monde)", "url": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8", "group": "Playlists publiques"}
+  ]
+}
