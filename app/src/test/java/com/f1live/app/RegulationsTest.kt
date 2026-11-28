@@ -44,14 +44,31 @@ Old stuff that must be ignored.
     }
 
     @Test
-    fun liveRegulationsFromWikipedia() = runBlocking {
+    fun builtInGuideIsFrenchAndStructured() = runBlocking {
         val repo = F1Repository()
         val regs = repo.regulations(force = true)
-        println("LIVE categories: " + regs.categories.map { "${it.title} (${it.sections.size} sections)" })
-        regs.categories.firstOrNull()?.sections?.firstOrNull()?.let { sec ->
-            println("sample [${regs.categories.first().title}] ${sec.title}: ${sec.points.firstOrNull()}")
+        println("GUIDE categories: " + regs.categories.map { it.title })
+        regs.categories.forEach { c ->
+            c.sections.forEach { sec ->
+                println("[${c.title}] ${sec.title}: ${sec.points.size} points")
+                sec.points.forEach { println("   - ${it.take(90)}") }
+            }
         }
-        assertTrue("expected categories", regs.categories.size >= 2)
-        assertTrue(regs.categories.sumOf { it.sections.sumOf { s -> s.points.size } } > 10)
+        assertTrue("expected >= 6 categories", regs.categories.size >= 6)
+        assertTrue("expected many points", regs.categories.sumOf { it.sections.sumOf { s -> s.points.size } } >= 20)
+        // French content: no common English rule words
+        val all = regs.categories.flatMap { it.sections.flatMap { s -> s.points } }.joinToString(" ")
+        assertTrue("should be French", !all.contains(" the "))
+        assertTrue("should mention points", all.contains("25"))
+        assertTrue("should mention pneus", all.lowercase().contains("pneu"))
+        assertTrue("should mention drapeau", all.lowercase().contains("drapeau"))
+    }
+
+    @Test
+    fun wikiFallbackStillWorks() = runBlocking {
+        val repo = F1Repository()
+        val regs = repo.regulationsFromWiki(force = true)
+        println("WIKI categories: " + regs.categories.map { it.title })
+        assertTrue(regs.categories.isNotEmpty())
     }
 }

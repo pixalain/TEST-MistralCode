@@ -440,8 +440,27 @@ class F1Repository(
     }
 
 
+    /**
+     * Règlement F1 destiné aux néophytes : contenu éditorial maison, en français,
+     * structuré par catégories. (Source Wikipedia conservée en secours via regulationsFromWiki.)
+     */
     suspend fun regulations(force: Boolean = false): Regulations {
-        val cacheKey = "regulations_fr"
+        val cacheKey = "regulations_guide_fr"
+        if (!force) cache?.load(cacheKey)?.let { (raw, _) ->
+            if (raw.isNotBlank()) {
+                return runCatching {
+                    F1Json.json.decodeFromString(Regulations.serializer(), raw)
+                }.getOrNull() ?: builtInRegulations()
+            }
+        }
+        val regs = builtInRegulations()
+        cache?.save(cacheKey, F1Json.json.encodeToString(Regulations.serializer(), regs))
+        return regs
+    }
+
+    /** Version détaillée (Wikipedia) utilisée en secours / complément. */
+    suspend fun regulationsFromWiki(force: Boolean = false): Regulations {
+        val cacheKey = "regulations_wiki"
         if (!force) cache?.load(cacheKey)?.let { (raw, _) ->
             if (raw.isNotBlank()) {
                 return runCatching {
@@ -450,7 +469,6 @@ class F1Repository(
             }
         }
         val year = runCatching { seasonSchedule("current").data.first }.getOrDefault("2026")
-        // 1) French season page: "Championnat du monde de Formule 1 <year>" -> "Repères en début de saison"
         try {
             val frApi = "https://fr.wikipedia.org/w/api.php?action=parse&page=" +
                 java.net.URLEncoder.encode("Championnat du monde de Formule 1 $year", "UTF-8") +
@@ -465,7 +483,6 @@ class F1Repository(
                 }
             }
         } catch (e: Exception) { }
-        // 2) Fallback: English "Formula One regulations" -> "Current rules and regulations"
         val api = "https://en.wikipedia.org/w/api.php?action=parse&page=" +
             java.net.URLEncoder.encode("Formula One regulations", "UTF-8") +
             "&prop=wikitext&format=json&redirects=1"
