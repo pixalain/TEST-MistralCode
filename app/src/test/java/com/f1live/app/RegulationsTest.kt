@@ -54,14 +54,17 @@ Old stuff that must be ignored.
                 sec.points.forEach { println("   - ${it.take(90)}") }
             }
         }
-        assertTrue("expected >= 6 categories", regs.categories.size >= 6)
-        assertTrue("expected many points", regs.categories.sumOf { it.sections.sumOf { s -> s.points.size } } >= 20)
+        assertTrue("expected >= 8 categories", regs.categories.size >= 8)
+        assertTrue("expected many points", regs.categories.sumOf { it.sections.sumOf { s -> s.points.size } } >= 30)
         // French content: no common English rule words
         val all = regs.categories.flatMap { it.sections.flatMap { s -> s.points } }.joinToString(" ")
         assertTrue("should be French", !all.contains(" the "))
         assertTrue("should mention points", all.contains("25"))
         assertTrue("should mention pneus", all.lowercase().contains("pneu"))
         assertTrue("should mention drapeau", all.lowercase().contains("drapeau"))
+        assertTrue("should detail engine", all.contains("MGU-K") && all.contains("V6"))
+        assertTrue("should detail chassis", all.contains("halo") && all.contains("cellule de survie"))
+        assertTrue("no active DRS in 2026", all.contains("DRS n'existe plus"))
     }
 
     @Test

@@ -122,28 +122,81 @@ fun builtInRegulations(): Regulations = Regulations(
             )
         ),
         RegulationCategory(
-            title = "🔧 Le règlement technique 2026 (simplifié)",
+            title = "🔧 Moteurs et groupes motopropulseurs (2026)",
             sections = listOf(
                 RegulationSection(
-                    title = "Moteur et énergie",
+                    title = "Architecture du V6 hybride",
                     points = listOf(
-                        "Moteur V6 turbo hybride 1.6 L, avec une part électrique renforcée en 2026 (presque 50 % de la puissance).",
-                        "Carburant 100 % durable obligatoire.",
-                        "Récupération d'énergie au freinage (MGU-K) et à l'échappement (MGU-H)."
+                        "Moteur thermique : V6 turbo de 1,6 litre (ICE), injection directe, régime limité à 15 000 tr/min.",
+                        "En 2026, la partie électrique est fortement renforcée : le MGU-K (récupération au freinage) passe à environ 350 kW, soit près de la moitié de la puissance totale.",
+                        "Le MGU-H (récupération à l'échappement) est supprimé en 2026 pour simplifier le groupe motopropulseur.",
+                        "Puissance totale d'une F1 2026 : environ 1 000 chevaux (thermique + électrique)."
                     )
                 ),
                 RegulationSection(
-                    title = "Aérodynamique et châssis",
+                    title = "Énergie, batterie et déploiement",
                     points = listOf(
-                        "Aérodynamique active en 2026 : ailerons mobiles pour réduire la traînée en ligne droite (mode 'X') et augmenter l'appui en courbe (mode 'Z').",
-                        "Poids minimum voiture + pilote : 770 kg en 2026 (à vérifier selon la version finale du règlement FIA).",
-                        "Largeur max 190 cm, 4 roues, uniquement les roues arrière motrices, 2 roues avant directrices."
+                        "L'énergie électrique est stockée dans une batterie (ERS) puis redéployée par le pilote via des modes moteur.",
+                        "Le pilote gère lui-même le déploiement de l'énergie électrique (boutons au volant) : attaque, défense, récolte ('harvest').",
+                        "La consommation est limitée à environ 100 kg de carburant par course (réservoir ~110 L), d'où l'importance de la récupération d'énergie."
+                    )
+                ),
+                RegulationSection(
+                    title = "Carburant et durabilité",
+                    points = listOf(
+                        "Carburant 100 % durable obligatoire depuis 2026 (biocarburant avancé ou e-fuel synthétique).",
+                        "L'huile moteur doit aussi être durable."
+                    )
+                ),
+                RegulationSection(
+                    title = "Limitation des moteurs",
+                    points = listOf(
+                        "Chaque pilote dispose d'un nombre limité de groupes motopropulseurs par saison (moteur thermique, turbo, MGU-K, MGU-H, batterie, électronique).",
+                        "Dépasser ce quota entraîne des pénalités de places sur la grille (ex. -5, -10 places selon le composant)."
                     )
                 )
             )
         ),
         RegulationCategory(
-            title = "🅿️ Stands, parc fermé et DRS",
+            title = "🚗 Châssis et carrosserie (2026)",
+            sections = listOf(
+                RegulationSection(
+                    title = "Dimensions et poids",
+                    points = listOf(
+                        "Largeur maximale : 190 cm (2 m avec les pneus), hauteur ~95 cm, empattement (distance entre essieux) limité à 340 cm.",
+                        "Poids minimal voiture + pilote + carburant : environ 770 kg en début de course (chiffre indicatif du règlement 2026).",
+                        "4 roues obligatoires, seules les roues arrière sont motrices, seules les 2 roues avant sont directrices.",
+                    )
+                ),
+                RegulationSection(
+                    title = "Sécurité : cellule de survie, halo, crash tests",
+                    points = listOf(
+                        "Le châssis intègre une cellule de survie (monocoque en carbone) autour du cockpit, avec le réservoir derrière le siège.",
+                        "Le halo (arceau en titane au-dessus du casque) protège le pilote des débris et des chocs frontaux.",
+                        "Des crash tests obligatoires : choc frontal à 30 mph, choc arrière, choc latéral, écrasement de l'arceau, colonne de direction."
+                    )
+                ),
+                RegulationSection(
+                    title = "Aérodynamique active 2026 (remplace le DRS)",
+                    points = listOf(
+                        "En 2026, le DRS classique disparaît : il est remplacé par l'aérodynamique active.",
+                        "Mode 'ligne droite' (X) : aileron avant et arrière s'ouvrent pour réduire la traînée et gagner de la vitesse de pointe, utilisable quand la piste est dégagée.",
+                        "Mode 'virage' (Z) : ailerons fermés pour maximiser l'appui dans les courbes.",
+                        "Le pilote (ou le système) bascule entre les deux modes selon les zones définies par le circuit."
+                    )
+                ),
+                RegulationSection(
+                    title = "Suspension, freins et boîte",
+                    points = listOf(
+                        "Suspension interdite d'être active : chaque roue est indépendante, réglée passivement.",
+                        "Freins à disques carbone, 4 roues freinées, répartiteur de freinage réglable par le pilote.",
+                        "Boîte de vitesses séquentielle à 8 rapports, commande au volant (palettes)."
+                    )
+                )
+            )
+        ),
+        RegulationCategory(
+            title = "🅿️ Stands, parc fermé et dépassements",
             sections = listOf(
                 RegulationSection(
                     title = "Parc fermé",
@@ -153,10 +206,10 @@ fun builtInRegulations(): Regulations = Regulations(
                     )
                 ),
                 RegulationSection(
-                    title = "Le DRS (aileron arrière mobile)",
+                    title = "Dépasser en 2026 : aéro active au lieu du DRS",
                     points = listOf(
-                        "En course, un pilote à moins d'1 seconde de la voiture devant peut activer le DRS dans les zones prévues.",
-                        "L'aileron s'ouvre pour réduire la traînée et faciliter le dépassement. Interdit sous drapeau jaune et dans le 1er tour."
+                        "Le DRS n'existe plus en 2026. Pour dépasser, les pilotes comptent sur l'aérodynamique active (mode ligne droite) et la meilleure traction en sortie de courbe.",
+                        "L'aspiration (rester dans le sillage d'une voiture) reste le meilleur allié pour préparer un dépassement."
                     )
                 ),
                 RegulationSection(
@@ -164,6 +217,34 @@ fun builtInRegulations(): Regulations = Regulations(
                     points = listOf(
                         "Vitesse limitée dans la voie des stands (80 km/h sur la plupart des circuits).",
                         "Changer les 4 roues prend environ 2 secondes chez les meilleures écuries."
+                    )
+                )
+            )
+        ),
+        RegulationCategory(
+            title = "🧠 Stratégie de course",
+            sections = listOf(
+                RegulationSection(
+                    title = "Undercut et overcut",
+                    points = listOf(
+                        "Undercut : s'arrêter avant son rival pour ressortir devant avec des pneus neufs et plus rapides.",
+                        "Overcut : rester en piste plus longtemps pour profiter d'une piste dégagée et signer de meilleurs chronos avant de rentrer.",
+                        "Le choix du moment du pit-stop (la 'fenêtre') est décisif pour gagner des places."
+                    )
+                ),
+                RegulationSection(
+                    title = "Le départ",
+                    points = listOf(
+                        "Départ arrêté : les feux s'éteignent aléatoirement (entre 0 et 5 s après le dernier feu rouge) pour éviter les départs anticipés.",
+                        "Un faux départ est pénalisé (drive-through ou stop-and-go de 10 s).",
+                        "La grille est formée de 2 voitures par rangée, espacées d'environ 8 m ; le poleman part à droite ou à gauche selon le côté le plus rapide."
+                    )
+                ),
+                RegulationSection(
+                    title = "Gestion de course",
+                    points = listOf(
+                        "Les pilotes doivent gérer leurs pneus, leur carburant et leur batterie sur toute la distance.",
+                        "Un drapeau rouge arrête la course ; elle reprend par un départ relancé ou derrière la safety car."
                     )
                 )
             )
