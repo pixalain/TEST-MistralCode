@@ -30,7 +30,7 @@ Points are awarded to the top 10 finishers of each race: 25, 18, 15, 12, 10, 8, 
 == History ==
 Old stuff that must be ignored.
 """.trimIndent()
-        val regs = parseRegulations(wt)
+        val regs = parseRegulations(wt, listOf("Current rules and regulations"))
         println("CATEGORIES: " + regs.categories.map { it.title to it.sections.map { s -> s.title to s.points.size } })
         regs.categories.forEach { c ->
             c.sections.forEach { sec -> println("[${c.title}] ${sec.title}:") ; sec.points.forEach { println("   - $it") } }
