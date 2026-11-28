@@ -92,5 +92,8 @@
     <string name="loading_sessions">Chargement des séances…</string>
     <string name="session_held">effectuée</string>
     <string name="weekend_program">Programme</string>
+    <string name="tab_regulations">Règlement</string>
+    <string name="regulations_title">Règlementation en cours (F1 2026)</string>
+    <string name="no_regulations">Aucune réglementation trouvée</string>
     <string name="no_session_data">Aucune donnée de séance pour ce GP</string>
 </resources>

@@ -71,6 +71,20 @@ class F1ViewModel(
     private val _compare = MutableStateFlow<UiState<List<com.f1live.app.data.repository.ConstructorRoundPoints>>>(UiState.Loading)
     val compare: StateFlow<UiState<List<com.f1live.app.data.repository.ConstructorRoundPoints>>> = _compare.asStateFlow()
 
+    private val _regulations = MutableStateFlow<UiState<com.f1live.app.data.repository.Regulations>>(UiState.Loading)
+    val regulations: StateFlow<UiState<com.f1live.app.data.repository.Regulations>> = _regulations.asStateFlow()
+
+    fun loadRegulations(force: Boolean = false) {
+        _regulations.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                _regulations.value = UiState.Success(repository.regulations(force = force))
+            } catch (e: Exception) {
+                _regulations.value = UiState.Error(e.message ?: "Erreur règlement")
+            }
+        }
+    }
+
     private val _weekend = MutableStateFlow<UiState<com.f1live.app.data.repository.RaceWeekend>>(UiState.Loading)
     val weekend: StateFlow<UiState<com.f1live.app.data.repository.RaceWeekend>> = _weekend.asStateFlow()
 

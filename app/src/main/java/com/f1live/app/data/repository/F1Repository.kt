@@ -439,6 +439,27 @@ class F1Repository(
         return result
     }
 
+
+    suspend fun regulations(force: Boolean = false): Regulations {
+        val cacheKey = "regulations"
+        if (!force) cache?.load(cacheKey)?.let { (raw, _) ->
+            if (raw.isNotBlank()) {
+                return runCatching {
+                    F1Json.json.decodeFromString(Regulations.serializer(), raw)
+                }.getOrNull() ?: Regulations()
+            }
+        }
+        val api = "https://en.wikipedia.org/w/api.php?action=parse&page=" +
+            java.net.URLEncoder.encode("Formula One regulations", "UTF-8") +
+            "&prop=wikitext&format=json&redirects=1"
+        val raw = withRetry429 { ApiClient.wikipedia.pageImages(api) }
+        val wikitext = raw["parse"]?.jsonObject?.get("wikitext")?.jsonObject?.get("*")?.jsonPrimitive?.content
+            ?: return Regulations()
+        val regs = parseRegulations(wikitext)
+        cache?.save(cacheKey, F1Json.json.encodeToString(Regulations.serializer(), regs))
+        return regs
+    }
+
     private suspend fun <T> withRetry429(maxRetries: Int = 5, block: suspend () -> T): T {
         var attempt = 0
         while (true) {
@@ -887,4 +908,108 @@ fun parseAlphaResults(json: kotlinx.serialization.json.JsonObject): List<AlphaSe
             time = o["time_display"]?.jsonPrimitive?.content ?: o["fastest_lap"]?.jsonPrimitive?.content
         )
     }.sortedBy { it.position }
+}
+
+// Pure parser: Wikipedia "Formula One regulations" wikitext -> categorized current rules
+fun cleanWikitext(t: String): String {
+    var x = t
+    // remove {{ ... }} templates (non-nested)
+    while (true) {
+        val a = x.indexOf("{{")
+        if (a < 0) break
+        val b = x.indexOf("}}", a + 2)
+        if (b < 0) break
+        x = x.removeRange(a, b + 2)
+    }
+    // [[a|b]] -> b ; [[a]] -> a
+    while (true) {
+        val a = x.indexOf("[[")
+        if (a < 0) break
+        val b = x.indexOf("]]", a + 2)
+        if (b < 0) break
+        val inner = x.substring(a + 2, b)
+        val pipe = inner.indexOf('|')
+        val label = if (pipe >= 0) inner.substring(pipe + 1) else inner
+        x = x.substring(0, a) + label + x.substring(b + 2)
+    }
+    // remove <...> html tags
+    while (true) {
+        val a = x.indexOf('<')
+        if (a < 0) break
+        val b = x.indexOf('>', a + 1)
+        if (b < 0) break
+        x = x.removeRange(a, b + 1)
+    }
+    x = x.replace("&nbsp;", " ").replace("&amp;", "&")
+    x = x.replace('\n', ' ').replace('\t', ' ')
+    return x.split(' ').filter { it.isNotBlank() }.joinToString(" ").trim()
+}
+
+fun parseRegulations(wikitext: String): Regulations {
+    val marker = "== Current rules and regulations =="
+    val start = wikitext.indexOf(marker)
+    if (start < 0) return Regulations()
+    val rest = wikitext.substring(start)
+    // cut at next level-2 section (e.g. "== History ==")
+    var end = rest.length
+    var searchFrom = marker.length
+    while (true) {
+        val nl = rest.indexOf('\n', searchFrom)
+        if (nl < 0) break
+        val lineEnd = rest.indexOf('\n', nl + 1).let { if (it < 0) rest.length else it }
+        val line = rest.substring(nl + 1, lineEnd)
+        if (line.startsWith("== ") && line.endsWith(" ==") && !line.startsWith("=== ")) {
+            end = nl
+            break
+        }
+        searchFrom = lineEnd
+    }
+    val body = rest.substring(0, end)
+
+    val categories = mutableListOf<RegulationCategory>()
+    var curCatTitle = ""
+    var curSections = mutableListOf<RegulationSection>()
+    var curSecTitle = ""
+    var curPoints = mutableListOf<String>()
+
+    fun flushSection() {
+        if (curSecTitle.isNotBlank() && curPoints.isNotEmpty()) {
+            curSections.add(RegulationSection(curSecTitle, curPoints.toList()))
+        }
+        curSecTitle = ""
+        curPoints = mutableListOf()
+    }
+    fun flushCategory() {
+        flushSection()
+        if (curCatTitle.isNotBlank() && curSections.isNotEmpty()) {
+            categories.add(RegulationCategory(curCatTitle, curSections.toList()))
+        }
+        curCatTitle = ""
+        curSections = mutableListOf()
+    }
+
+    for (rawLine in body.lineSequence()) {
+        val line = rawLine.trim()
+        when {
+            line.startsWith("====") && line.endsWith("====") -> {
+                flushSection()
+                curSecTitle = cleanWikitext(line.removePrefix("====").removeSuffix("===="))
+            }
+            line.startsWith("===") && line.endsWith("===") -> {
+                flushCategory()
+                curCatTitle = cleanWikitext(line.removePrefix("===").removeSuffix("==="))
+            }
+            line.isBlank() -> {}
+            else -> {
+                if (curSecTitle.isNotBlank()) {
+                    val clean = cleanWikitext(line)
+                    if (clean.length > 30 && !clean.startsWith("*") && curPoints.size < 6) {
+                        curPoints.add(if (clean.length > 280) clean.take(277) + "…" else clean)
+                    }
+                }
+            }
+        }
+    }
+    flushCategory()
+    return Regulations(categories)
 }

@@ -44,6 +44,7 @@ import com.f1live.app.ui.F1ViewModel
 import com.f1live.app.ui.screens.RaceDetailScreen
 import com.f1live.app.ui.screens.DriverProfileScreen
 import com.f1live.app.ui.screens.NewsScreen
+import com.f1live.app.ui.screens.RegulationsScreen
 import com.f1live.app.ui.screens.RacesScreen
 import com.f1live.app.ui.screens.StandingsScreen
 import com.f1live.app.ui.screens.TeamProfileScreen
@@ -72,6 +73,7 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
     val driverPhotoPath by viewModel.driverPhotoPath.collectAsStateWithLifecycle()
     val constructorState by viewModel.constructorProfile.collectAsStateWithLifecycle()
     val weekendState by viewModel.weekend.collectAsStateWithLifecycle()
+    val regulationsState by viewModel.regulations.collectAsStateWithLifecycle()
     val compareState by viewModel.compare.collectAsStateWithLifecycle()
     var compareA by remember { mutableStateOf("") }
     var compareB by remember { mutableStateOf("") }
@@ -192,6 +194,12 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     icon = { Icon(Icons.Default.Article, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_news)) }
                 )
+                NavigationBarItem(
+                    selected = currentRoute == "regulations",
+                    onClick = { navController.navigate("regulations") { popUpTo(0) } },
+                    icon = { Icon(Icons.Default.Menu, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_regulations)) }
+                )
             }
         }
     ) { padding ->
@@ -271,6 +279,14 @@ fun F1App(viewModel: F1ViewModel = viewModel()) {
                     },
                     weekend = weekendState,
                     onLoadWeekend = { round -> viewModel.loadWeekend(round) },
+                    lastUpdated = lastUpdated
+                )
+            }
+            composable("regulations") {
+                LaunchedEffect(Unit) { viewModel.loadRegulations() }
+                RegulationsScreen(
+                    state = regulationsState,
+                    onRefresh = { viewModel.loadRegulations(force = true) },
                     lastUpdated = lastUpdated
                 )
             }
